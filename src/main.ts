@@ -4,7 +4,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import cookieParser from 'cookie-parser';
 import express from 'express';
-import * as hbs from 'hbs';
+import hbs from 'hbs';
 import { join } from 'path';
 
 async function bootstrap() {
