@@ -7,6 +7,7 @@ import {
   Query,
   Req,
   Res,
+  UseFilters,
   UseGuards,
 } from '@nestjs/common';
 import { Response, Request } from 'express';
@@ -16,9 +17,11 @@ import { CommandsService } from '../commands/commands.service';
 import { DashboardAuthGuard } from './dashboard-auth.guard';
 import { CommandType } from '../commands/entities/command.entity';
 import { JwtService } from '@nestjs/jwt';
+import { DashboardUnauthorizedFilter } from './dashboard-unauthorized.filter';
 
 const SESSION_COOKIE = 'session_token';
 
+@UseFilters(DashboardUnauthorizedFilter)
 @Controller()
 export class DashboardController {
   private readonly isProduction = process.env.NODE_ENV === 'production';
@@ -37,16 +40,34 @@ export class DashboardController {
 
   @Get('/dashboard/login')
   async showLogin(@Req() req: Request, @Res() res: Response) {
+    const nextParam =
+      typeof req.query.next === 'string' ? req.query.next : '/dashboard/devices';
+    const safeNext = nextParam.startsWith('/') ? nextParam : '/dashboard/devices';
+
     if (await this.hasValidSession(req)) {
-      return res.redirect('/dashboard/devices');
+      return res.redirect(safeNext);
     }
-    return res.render('auth/login', { title: 'Login' });
+
+    const messageKey =
+      typeof req.query.message === 'string' ? req.query.message : undefined;
+    const messages: Record<string, string> = {
+      loginRequired: 'Please sign in to continue.',
+      sessionExpired: 'Your session expired. Please sign in again.',
+      loggedOut: 'You have been signed out.',
+    };
+
+    return res.render('auth/login', {
+      title: 'Login',
+      message: messageKey ? messages[messageKey] : undefined,
+      next: safeNext,
+    });
   }
 
   @Post('/dashboard/login')
   async handleLogin(
     @Body('username') username: string,
     @Body('password') password: string,
+    @Body('next') next: string | undefined,
     @Res() res: Response,
   ) {
     try {
@@ -57,12 +78,15 @@ export class DashboardController {
         secure: this.isProduction,
         maxAge: 1000 * 60 * 60, // 1 hour
       });
-      return res.redirect('/dashboard/devices');
+      const redirectTarget =
+        next && next.startsWith('/') ? next : '/dashboard/devices';
+      return res.redirect(redirectTarget);
     } catch (error) {
       return res.render('auth/login', {
         title: 'Login',
         error: 'Invalid credentials',
         username,
+        next: next && next.startsWith('/') ? next : '/dashboard/devices',
       });
     }
   }
@@ -70,7 +94,7 @@ export class DashboardController {
   @Get('/dashboard/logout')
   async logout(@Res() res: Response) {
     res.clearCookie(SESSION_COOKIE);
-    return res.redirect('/dashboard/login');
+    return res.redirect('/dashboard/login?message=loggedOut');
   }
 
   @UseGuards(DashboardAuthGuard)

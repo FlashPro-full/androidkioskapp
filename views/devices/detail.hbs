@@ -17,13 +17,27 @@
 
       <div class="card">
         <h2>{{device.displayName}}</h2>
-        <p>
-          <strong>Status:</strong> {{device.status}}<br />
-          <strong>Allowed package:</strong> {{device.allowedPackage}}<br />
-          <strong>Last check-in:</strong>
-          {{#if device.lastCheckIn}}{{device.lastCheckIn}}{{else}}Never{{/if}}<br />
-          <strong>Last command:</strong>
-          {{#if device.lastCommandAt}}{{device.lastCommandAt}}{{else}}None{{/if}}
+        <p class="device-summary">
+          <span class="device-summary__row">
+            <span class="device-summary__label">Status</span>
+            <span class="device-summary__value">
+              <span class="status-badge status-{{statusClass device.status}}">
+                {{statusLabel device.status}}
+              </span>
+            </span>
+          </span>
+          <span class="device-summary__row">
+            <span class="device-summary__label">Allowed package</span>
+            <span class="device-summary__value">{{device.allowedPackage}}</span>
+          </span>
+          <span class="device-summary__row">
+            <span class="device-summary__label">Last check-in</span>
+            <span class="device-summary__value">{{formatDate device.lastCheckIn}}</span>
+          </span>
+          <span class="device-summary__row">
+            <span class="device-summary__label">Last command</span>
+            <span class="device-summary__value">{{formatDate device.lastCommandAt}}</span>
+          </span>
         </p>
 
         <div class="actions">
@@ -66,7 +80,28 @@
 
       <div class="card">
         <h3>Provisioning Extras</h3>
-        <pre>{{{pretty provisioning}}}</pre>
+        <ul class="kv-list">
+          <li class="kv-list__item">
+            <span class="kv-list__label">Portal URL</span>
+            <span class="kv-list__value">{{provisioning.portal_url}}</span>
+          </li>
+          <li class="kv-list__item">
+            <span class="kv-list__label">Device ID</span>
+            <span class="kv-list__value">{{provisioning.device_id}}</span>
+          </li>
+          <li class="kv-list__item">
+            <span class="kv-list__label">Device Token</span>
+            <span class="kv-list__value">{{provisioning.device_token}}</span>
+          </li>
+          <li class="kv-list__item">
+            <span class="kv-list__label">Allowed package</span>
+            <span class="kv-list__value">{{provisioning.allowed_package}}</span>
+          </li>
+          <li class="kv-list__item">
+            <span class="kv-list__label">Initial PIN</span>
+            <span class="kv-list__value">{{provisioning.initial_pin}}</span>
+          </li>
+        </ul>
       </div>
 
       <div class="card">
@@ -86,8 +121,8 @@
                 <tr>
                   <td>{{this.type}}</td>
                   <td>{{this.status}}</td>
-                  <td>{{this.createdAt}}</td>
-                  <td>{{this.updatedAt}}</td>
+                  <td>{{formatDate this.createdAt}}</td>
+                  <td>{{formatDate this.updatedAt}}</td>
                 </tr>
               {{/each}}
             </tbody>

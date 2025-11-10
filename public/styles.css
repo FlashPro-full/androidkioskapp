@@ -7,6 +7,9 @@ body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   background: #f7f7fb;
   color: #1f2933;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 a {
@@ -57,7 +60,15 @@ a:hover {
 }
 
 .page {
+  flex: 1;
   padding: 2rem 0 4rem;
+}
+
+.page--center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 1.5rem;
 }
 
 .card {
@@ -127,6 +138,7 @@ button {
   color: #fff;
   cursor: pointer;
   font-size: 0.95rem;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
 }
 
 button.secondary {
@@ -141,6 +153,7 @@ button.danger {
   padding: 2rem 0;
   background: #0f172a;
   color: #cbd5f5;
+  margin-top: auto;
 }
 
 .footer__inner {
@@ -150,11 +163,24 @@ button.danger {
 
 .login-card {
   max-width: 360px;
-  margin: 4rem auto;
+  margin: 0 auto;
+  text-align: left;
+}
+
+.login-wrapper {
+  width: 100%;
+  max-width: 420px;
 }
 
 .login-card h1 {
   margin-top: 0;
+  margin-bottom: 0.25rem;
+}
+
+.login-subtitle {
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  color: #4b5563;
 }
 
 .form-group {
@@ -164,5 +190,105 @@ button.danger {
 .error {
   color: #dc2626;
   margin-bottom: 1rem;
+}
+
+.info-message {
+  background: #ecfdf5;
+  border: 1px solid #6ee7b7;
+  color: #047857;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.login-helper {
+  margin-top: 1.5rem;
+  font-size: 0.9rem;
+  color: #4b5563;
+}
+
+.btn-primary {
+  width: 100%;
+  padding: 0.65rem 1rem;
+  font-size: 1rem;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: capitalize;
+}
+
+.status-badge.status-online {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-badge.status-offline {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.status-badge.status-provisioned {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.status-badge.status-unknown {
+  background: #ede9fe;
+  color: #5b21b6;
+}
+
+.kv-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.kv-list__item {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.kv-list__label {
+  font-weight: 600;
+  color: #475569;
+}
+
+.kv-list__value {
+  color: #0f172a;
+  text-align: right;
+  word-break: break-all;
+}
+
+.device-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.device-summary__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.device-summary__label {
+  font-weight: 600;
+  color: #475569;
+}
+
+.device-summary__value {
+  color: #0f172a;
+  text-align: right;
+  word-break: break-word;
 }
 

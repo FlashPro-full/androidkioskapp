@@ -25,6 +25,31 @@ async function bootstrap() {
     JSON.stringify(context, null, 2),
   );
   hbs.registerHelper('year', () => new Date().getFullYear());
+  hbs.registerHelper('statusLabel', (status: string) => {
+    switch (status) {
+      case 'ONLINE':
+        return 'Online';
+      case 'OFFLINE':
+        return 'Offline';
+      case 'PROVISIONED':
+        return 'Provisioned';
+      default:
+        return status ?? 'Unknown';
+    }
+  });
+  hbs.registerHelper('statusClass', (status: string) =>
+    status ? status.toLowerCase() : 'unknown',
+  );
+  hbs.registerHelper('formatDate', (value?: string | Date) => {
+    if (!value) {
+      return 'Never';
+    }
+    const date = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return typeof value === 'string' ? value : 'Unknown';
+    }
+    return date.toLocaleString();
+  });
   app.setViewEngine('hbs');
   app.useStaticAssets(join(__dirname, '..', 'public'));
 

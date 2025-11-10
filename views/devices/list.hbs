@@ -24,14 +24,12 @@
                 <tr>
                   <td>{{this.displayName}}</td>
                   <td>{{this.allowedPackage}}</td>
-                  <td>{{this.status}}</td>
                   <td>
-                    {{#if this.lastCheckIn}}
-                      {{this.lastCheckIn}}
-                    {{else}}
-                      Never
-                    {{/if}}
+                    <span class="status-badge status-{{statusClass this.status}}">
+                      {{statusLabel this.status}}
+                    </span>
                   </td>
+                  <td>{{formatDate this.lastCheckIn}}</td>
                   <td><a href="/dashboard/devices/{{this.id}}">View</a></td>
                 </tr>
               {{/each}}
