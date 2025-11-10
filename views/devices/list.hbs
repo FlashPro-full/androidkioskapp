@@ -1,0 +1,47 @@
+{{> head title=title}}
+<body>
+  {{> nav}}
+  <div class="page">
+    <div class="container">
+      {{#if status}}
+        <div class="status-message">{{status}}</div>
+      {{/if}}
+      <div class="card">
+        <h2>Registered Devices</h2>
+        {{#if devices.length}}
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Allowed Package</th>
+                <th>Status</th>
+                <th>Last Check-In</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {{#each devices}}
+                <tr>
+                  <td>{{this.displayName}}</td>
+                  <td>{{this.allowedPackage}}</td>
+                  <td>{{this.status}}</td>
+                  <td>
+                    {{#if this.lastCheckIn}}
+                      {{this.lastCheckIn}}
+                    {{else}}
+                      Never
+                    {{/if}}
+                  </td>
+                  <td><a href="/dashboard/devices/{{this.id}}">View</a></td>
+                </tr>
+              {{/each}}
+            </tbody>
+          </table>
+        {{else}}
+          <p>No devices registered yet.</p>
+        {{/if}}
+      </div>
+    </div>
+  </div>
+{{> footer}}
+
