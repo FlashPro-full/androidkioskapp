@@ -71,6 +71,10 @@ a:hover {
   padding: 4rem 1.5rem;
 }
 
+.container.narrow {
+  max-width: 560px;
+}
+
 .card {
   background: #fff;
   border-radius: 12px;
@@ -90,6 +94,28 @@ a:hover {
   border-radius: 8px;
   margin-bottom: 1.5rem;
   color: #1d4ed8;
+}
+
+.card-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1rem;
+}
+
+.btn-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.4rem 0.8rem;
+  background: #2563eb;
+  color: #fff;
+  border-radius: 6px;
+  font-weight: 600;
+  transition: background 0.15s ease;
+}
+
+.btn-link:hover {
+  background: #1d4ed8;
+  text-decoration: none;
 }
 
 table {
@@ -211,6 +237,12 @@ button.danger {
   width: 100%;
   padding: 0.65rem 1rem;
   font-size: 1rem;
+}
+
+.vertical-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
 .status-badge {

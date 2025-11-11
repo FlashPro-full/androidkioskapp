@@ -18,6 +18,7 @@ import { DashboardAuthGuard } from './dashboard-auth.guard';
 import { CommandType } from '../commands/entities/command.entity';
 import { JwtService } from '@nestjs/jwt';
 import { DashboardUnauthorizedFilter } from './dashboard-unauthorized.filter';
+import { CreateDeviceDto } from '../devices/dto/create-device.dto';
 
 const SESSION_COOKIE = 'session_token';
 
@@ -137,6 +138,63 @@ export class DashboardController {
       token,
       provisioning,
     });
+  }
+
+  @UseGuards(DashboardAuthGuard)
+  @Get('/dashboard/devices/new')
+  async showCreateDevice(
+    @Query('status') status: string | undefined,
+    @Res() res: Response,
+  ) {
+    return res.render('devices/new', {
+      title: 'Register Device',
+      status,
+      defaults: {
+        allowedPackage:
+          process.env.DEFAULT_ALLOWED_PACKAGE ?? 'com.client.businessapp',
+      },
+    });
+  }
+
+  @UseGuards(DashboardAuthGuard)
+  @Post('/dashboard/devices/new')
+  async createDevice(
+    @Body('displayName') displayName: string,
+    @Body('allowedPackage') allowedPackage: string | undefined,
+    @Body('initialPin') initialPin: string | undefined,
+    @Res() res: Response,
+  ) {
+    const trimmedName = displayName?.trim();
+    if (!trimmedName) {
+      return res.redirect(
+        '/dashboard/devices/new?status=' +
+          encodeURIComponent('Device name is required'),
+      );
+    }
+
+    const dto: CreateDeviceDto = {
+      displayName: trimmedName,
+      allowedPackage:
+        allowedPackage?.trim() ||
+        process.env.DEFAULT_ALLOWED_PACKAGE ||
+        'com.client.businessapp',
+      initialPin: initialPin?.trim(),
+    };
+
+    try {
+      const result = await this.devicesService.createDevice(dto);
+      const params = new URLSearchParams();
+      params.set('status', 'Device registered');
+      params.set('token', result.provisioning.device_token);
+      return res.redirect(
+        `/dashboard/devices/${result.device.id}?${params.toString()}`,
+      );
+    } catch (error) {
+      return res.redirect(
+        '/dashboard/devices/new?status=' +
+          encodeURIComponent('Failed to create device'),
+      );
+    }
   }
 
   @UseGuards(DashboardAuthGuard)

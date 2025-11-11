@@ -1,0 +1,52 @@
+{{> head title=title}}
+<body>
+  {{> nav}}
+  <div class="page page--center">
+    <div class="container narrow">
+      <div class="card">
+        <h2>Register a Device</h2>
+        {{#if status}}
+          <div class="status-message">{{status}}</div>
+        {{/if}}
+        <form method="post" action="/dashboard/devices/new" class="vertical-form">
+          <div class="form-group">
+            <label for="displayName">Device name</label>
+            <input
+              type="text"
+              id="displayName"
+              name="displayName"
+              placeholder="Lobby tablet"
+              required
+              autofocus
+            />
+          </div>
+          <div class="form-group">
+            <label for="allowedPackage">Allowed package</label>
+            <input
+              type="text"
+              id="allowedPackage"
+              name="allowedPackage"
+              value="{{defaults.allowedPackage}}"
+              placeholder="com.client.businessapp"
+            />
+          </div>
+          <div class="form-group">
+            <label for="initialPin">Initial technician PIN</label>
+            <input
+              type="text"
+              id="initialPin"
+              name="initialPin"
+              placeholder="Optional (default 1234)"
+            />
+          </div>
+          <button type="submit" class="btn-primary">Create device</button>
+        </form>
+        <p class="login-helper">
+          After creation you’ll receive the provisioning token. Scan it on the tablet to lock it
+          down.
+        </p>
+      </div>
+    </div>
+  </div>
+{{> footer}}
+
