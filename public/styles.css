@@ -113,6 +113,14 @@ a:hover {
   transition: background 0.15s ease;
 }
 
+.btn-link.secondary {
+  background: #1e293b;
+}
+
+.btn-link.secondary:hover {
+  background: #0f172a;
+}
+
 .btn-link:hover {
   background: #1d4ed8;
   text-decoration: none;
@@ -237,6 +245,70 @@ button.danger {
   width: 100%;
   padding: 0.65rem 1rem;
   font-size: 1rem;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.bulk-form table input[type='checkbox'] {
+  width: 18px;
+  height: 18px;
+}
+
+.bulk-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.bulk-actions__group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 200px;
+}
+
+.bulk-actions__group input,
+.bulk-actions__group select {
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+}
+
+.qr-block {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+  margin-top: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.qr-block__image {
+  width: 240px;
+  height: 240px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #fff;
+  padding: 0.75rem;
+}
+
+.qr-block__json {
+  flex: 1;
+  min-width: 260px;
+  height: 240px;
+  border-radius: 12px;
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  font-family: 'Fira Code', 'Courier New', monospace;
+  font-size: 0.85rem;
+  padding: 0.75rem;
+  color: #334155;
+  resize: none;
 }
 
 .vertical-form {

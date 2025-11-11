@@ -19,6 +19,7 @@ import { CommandType } from '../commands/entities/command.entity';
 import { JwtService } from '@nestjs/jwt';
 import { DashboardUnauthorizedFilter } from './dashboard-unauthorized.filter';
 import { CreateDeviceDto } from '../devices/dto/create-device.dto';
+import { generateProvisioningQr } from './provisioning-qr';
 
 const SESSION_COOKIE = 'session_token';
 
@@ -102,6 +103,7 @@ export class DashboardController {
   @Get('/dashboard/devices')
   async listDevices(
     @Query('status') status: string | undefined,
+    @Query('message') message: string | undefined,
     @Res() res: Response,
   ) {
     const devices = await this.devicesService.findAll();
@@ -109,7 +111,82 @@ export class DashboardController {
       title: 'Devices',
       devices,
       status,
+      message,
     });
+  }
+
+  @UseGuards(DashboardAuthGuard)
+  @Post('/dashboard/devices/bulk/commands')
+  async queueBulkCommand(
+    @Body('deviceIds') deviceIds: string[],
+    @Body('action') action: string,
+    @Body('pin') pin: string | undefined,
+    @Body('allowedPackage') allowedPackage: string | undefined,
+    @Res() res: Response,
+  ) {
+    if (!Array.isArray(deviceIds) || deviceIds.length === 0) {
+      return res.redirect(
+        '/dashboard/devices?message=' +
+          encodeURIComponent('Select at least one device'),
+      );
+    }
+    try {
+      switch (action) {
+        case 'pin':
+          if (!pin || pin.length < 4) {
+            return res.redirect(
+              '/dashboard/devices?message=' +
+                encodeURIComponent('PIN must be at least 4 digits'),
+            );
+          }
+          for (const id of deviceIds) {
+            const updatedDevice = await this.devicesService.rotatePin(id, pin);
+            await this.commandsService.queueCommand(id, CommandType.PIN_UPDATE, {
+              pin_hash: updatedDevice.pinHash,
+              pin_salt: updatedDevice.pinSalt,
+            });
+          }
+          break;
+        case 'package':
+          if (!allowedPackage) {
+            return res.redirect(
+              '/dashboard/devices?message=' +
+                encodeURIComponent('Package name is required'),
+            );
+          }
+          for (const id of deviceIds) {
+            await this.devicesService.updateDevice(id, {
+              allowedPackage,
+            });
+            await this.commandsService.queueCommand(
+              id,
+              CommandType.PACKAGE_UPDATE,
+              { allowed_package: allowedPackage },
+            );
+          }
+          break;
+        case 'reboot':
+          await this.commandsService.queueBulkCommands(
+            deviceIds,
+            CommandType.REBOOT,
+          );
+          break;
+        default:
+          return res.redirect(
+            '/dashboard/devices?message=' +
+              encodeURIComponent('Unknown bulk action'),
+          );
+      }
+      return res.redirect(
+        '/dashboard/devices?message=' +
+          encodeURIComponent('Bulk command queued'),
+      );
+    } catch (error) {
+      return res.redirect(
+        '/dashboard/devices?message=' +
+          encodeURIComponent('Failed to queue bulk command'),
+      );
+    }
   }
 
   @UseGuards(DashboardAuthGuard)
@@ -118,6 +195,7 @@ export class DashboardController {
     @Param('id') id: string,
     @Query('status') status: string | undefined,
     @Query('token') token: string | undefined,
+    @Query('showQr') showQr: string | undefined,
     @Res() res: Response,
   ) {
     const device = await this.devicesService.getDeviceOrThrow(id);
@@ -137,6 +215,7 @@ export class DashboardController {
       status,
       token,
       provisioning,
+      qr: showQr !== undefined ? await generateProvisioningQr(provisioning) : undefined,
     });
   }
 

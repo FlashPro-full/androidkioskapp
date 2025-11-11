@@ -79,7 +79,16 @@
       </div>
 
       <div class="card">
-        <h3>Provisioning Extras</h3>
+        <div class="card-header">
+          <h3>Provisioning Extras</h3>
+          <div class="card-actions">
+            {{#if qr}}
+              <a class="btn-link secondary" href="/dashboard/devices/{{device.id}}">Hide QR</a>
+            {{else}}
+              <a class="btn-link secondary" href="/dashboard/devices/{{device.id}}?showQr=1">Show QR</a>
+            {{/if}}
+          </div>
+        </div>
         <ul class="kv-list">
           <li class="kv-list__item">
             <span class="kv-list__label">Portal URL</span>
@@ -102,6 +111,12 @@
             <span class="kv-list__value">{{provisioning.initial_pin}}</span>
           </li>
         </ul>
+        {{#if qr}}
+          <div class="qr-block">
+            <img class="qr-block__image" src="{{qr.image}}" alt="Provisioning QR code" />
+            <textarea class="qr-block__json" readonly>{{qr.json}}</textarea>
+          </div>
+        {{/if}}
       </div>
 
       <div class="card">

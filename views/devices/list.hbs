@@ -6,42 +6,71 @@
       {{#if status}}
         <div class="status-message">{{status}}</div>
       {{/if}}
-      <div class="card">
-        <h2>Registered Devices</h2>
-        <div class="card-actions">
-          <a class="btn-link" href="/dashboard/devices/new">+ Register Device</a>
-        </div>
-        {{#if devices.length}}
-          <table>
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Allowed Package</th>
-                <th>Status</th>
-                <th>Last Check-In</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {{#each devices}}
+      <form method="post" action="/dashboard/devices/bulk/commands" class="bulk-form">
+        <input type="hidden" name="_csrf" value="{{csrfToken}}" />
+        <div class="card">
+          <div class="card-header">
+            <h2>Registered Devices</h2>
+            <div class="card-actions">
+              <a class="btn-link" href="/dashboard/devices/new">+ Register Device</a>
+            </div>
+          </div>
+          {{#if devices.length}}
+            <table>
+              <thead>
                 <tr>
-                  <td>{{this.displayName}}</td>
-                  <td>{{this.allowedPackage}}</td>
-                  <td>
-                    <span class="status-badge status-{{statusClass this.status}}">
-                      {{statusLabel this.status}}
-                    </span>
-                  </td>
-                  <td>{{formatDate this.lastCheckIn}}</td>
-                  <td><a href="/dashboard/devices/{{this.id}}">View</a></td>
+                  <th>
+                    <input type="checkbox" id="selectAll" />
+                  </th>
+                  <th>Name</th>
+                  <th>Allowed Package</th>
+                  <th>Status</th>
+                  <th>Last Check-In</th>
+                  <th></th>
                 </tr>
-              {{/each}}
-            </tbody>
-          </table>
-        {{else}}
-          <p>No devices registered yet.</p>
-        {{/if}}
-      </div>
+              </thead>
+              <tbody>
+                {{#each devices}}
+                  <tr>
+                    <td>
+                      <input type="checkbox" name="deviceIds" value="{{this.id}}" />
+                    </td>
+                    <td>{{this.displayName}}</td>
+                    <td>{{this.allowedPackage}}</td>
+                    <td>
+                      <span class="status-badge status-{{statusClass this.status}}">
+                        {{statusLabel this.status}}
+                      </span>
+                    </td>
+                    <td>{{formatDate this.lastCheckIn}}</td>
+                    <td><a href="/dashboard/devices/{{this.id}}">View</a></td>
+                  </tr>
+                {{/each}}
+              </tbody>
+            </table>
+            <div class="bulk-actions">
+              <div class="bulk-actions__group">
+                <label>Bulk action</label>
+                <select name="action" required>
+                  <option value="">Select action</option>
+                  <option value="pin">Rotate PIN</option>
+                  <option value="package">Change package</option>
+                  <option value="reboot">Remote reboot</option>
+                </select>
+              </div>
+              <div class="bulk-actions__group">
+                <input type="text" name="pin" placeholder="New PIN">
+              </div>
+              <div class="bulk-actions__group">
+                <input type="text" name="allowedPackage" placeholder="New package">
+              </div>
+              <button type="submit" class="btn-primary">Queue command</button>
+            </div>
+          {{else}}
+            <p>No devices registered yet.</p>
+          {{/if}}
+        </div>
+      </form>
     </div>
   </div>
 {{> footer}}

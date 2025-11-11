@@ -20,6 +20,27 @@ export class CommandsService {
     private readonly devicesRepository: Repository<Device>,
   ) {}
 
+  async queueBulkCommands(
+    deviceIds: string[],
+    type: CommandType,
+    payload: Record<string, unknown> = {},
+  ): Promise<Command[]> {
+    const commands: Command[] = [];
+    for (const id of deviceIds) {
+      const device = await this.devicesService.getDeviceOrThrow(id);
+      const command = this.commandsRepository.create({
+        device,
+        type,
+        payload,
+        status: CommandStatus.PENDING,
+      });
+      device.lastCommandAt = new Date();
+      await this.devicesRepository.save(device);
+      commands.push(await this.commandsRepository.save(command));
+    }
+    return commands;
+  }
+
   async queueCommand(
     deviceId: string,
     type: CommandType,

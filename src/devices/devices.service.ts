@@ -57,9 +57,17 @@ export class DevicesService {
     device.latestToken = deviceToken;
     await this.devicesRepository.save(device);
 
+    const provisioning = {
+      portal_url: this.configService.get<string>('PORTAL_URL') ?? '',
+      device_id: device.id,
+      device_token: plainToken,
+      allowed_package: device.allowedPackage,
+      initial_pin: initialPin,
+    };
+
     return {
       device,
-      provisioning: this.buildProvisioningBundle(device, plainToken, initialPin),
+      provisioning,
     };
   }
 
@@ -149,21 +157,6 @@ export class DevicesService {
     device.latestToken = token;
     await this.devicesRepository.save(device);
     return { token: plainToken };
-  }
-
-  private buildProvisioningBundle(device: Device, token: string, pin: string) {
-    const portalUrl =
-      this.configService.get<string>('PORTAL_URL') ?? 'https://portal.example.com';
-    return {
-      adminComponent: 'com.example.androidlauncher/.admin.KioskDeviceAdminReceiver',
-      extras: {
-        portal_url: portalUrl,
-        device_id: device.id,
-        device_token: token,
-        allowed_package: device.allowedPackage,
-        initial_pin: pin,
-      },
-    };
   }
 
   private generateDeviceToken(): { plainToken: string; tokenHash: string } {
