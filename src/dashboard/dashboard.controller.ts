@@ -190,36 +190,6 @@ export class DashboardController {
   }
 
   @UseGuards(DashboardAuthGuard)
-  @Get('/dashboard/devices/:id')
-  async showDevice(
-    @Param('id') id: string,
-    @Query('status') status: string | undefined,
-    @Query('token') token: string | undefined,
-    @Query('showQr') showQr: string | undefined,
-    @Res() res: Response,
-  ) {
-    const device = await this.devicesService.getDeviceOrThrow(id);
-    const commands = await this.commandsService.listCommands(id);
-    const provisioning = {
-      portal_url: process.env.PORTAL_URL ?? '',
-      device_id: device.id,
-      device_token: token ?? 'Rotate token to view a fresh value.',
-      allowed_package: device.allowedPackage,
-      initial_pin: 'Use PIN command to rotate',
-    };
-
-    return res.render('devices/detail', {
-      title: device.displayName,
-      device,
-      commands,
-      status,
-      token,
-      provisioning,
-      qr: showQr !== undefined ? await generateProvisioningQr(provisioning) : undefined,
-    });
-  }
-
-  @UseGuards(DashboardAuthGuard)
   @Get('/dashboard/devices/new')
   async showCreateDevice(
     @Query('status') status: string | undefined,
@@ -274,6 +244,39 @@ export class DashboardController {
           encodeURIComponent('Failed to create device'),
       );
     }
+  }
+
+  @UseGuards(DashboardAuthGuard)
+  @Get('/dashboard/devices/:id')
+  async showDevice(
+    @Param('id') id: string,
+    @Query('status') status: string | undefined,
+    @Query('token') token: string | undefined,
+    @Query('showQr') showQr: string | undefined,
+    @Res() res: Response,
+  ) {
+    const device = await this.devicesService.getDeviceOrThrow(id);
+    const commands = await this.commandsService.listCommands(id);
+    const provisioning = {
+      portal_url: process.env.PORTAL_URL ?? '',
+      device_id: device.id,
+      device_token: token ?? 'Rotate token to view a fresh value.',
+      allowed_package: device.allowedPackage,
+      initial_pin: 'Use PIN command to rotate',
+    };
+
+    return res.render('devices/detail', {
+      title: device.displayName,
+      device,
+      commands,
+      status,
+      token,
+      provisioning,
+      qr:
+        showQr !== undefined
+          ? await generateProvisioningQr(provisioning)
+          : undefined,
+    });
   }
 
   @UseGuards(DashboardAuthGuard)

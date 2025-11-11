@@ -83,6 +83,10 @@ a:hover {
   margin-bottom: 2rem;
 }
 
+.card.card--full {
+  width: 100%;
+}
+
 .card h2 {
   margin-top: 0;
 }
