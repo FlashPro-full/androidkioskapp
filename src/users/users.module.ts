@@ -19,7 +19,7 @@ export class UsersModule implements OnModuleInit {
     const username =
       this.configService.get<string>('ADMIN_USERNAME') ?? 'paulkiosk123';
     const password =
-      this.configService.get<string>('ADMIN_PASSWORD') ?? 'paulkiosk123!@#';
+      this.configService.get<string>('ADMIN_PASSWORD') ?? 'Innerpe@ce203';
     await this.usersService.createAdminIfMissing(username, password);
   }
 }
