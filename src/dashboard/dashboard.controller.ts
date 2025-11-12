@@ -12,10 +12,7 @@ import {
 } from '@nestjs/common';
 import { Response, Request } from 'express';
 import { join, resolve } from 'path';
-import { existsSync, mkdirSync, writeFileSync, readFileSync } from 'fs';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { UseInterceptors, UploadedFile } from '@nestjs/common';
-import { diskStorage, memoryStorage } from 'multer';
+import { existsSync } from 'fs';
 import { AuthService } from '../auth/auth.service';
 import { DevicesService } from '../devices/devices.service';
 import { CommandsService } from '../commands/commands.service';
@@ -37,7 +34,6 @@ const SESSION_COOKIE = 'session_token';
 @Controller()
 export class DashboardController {
   private readonly isProduction = process.env.NODE_ENV === 'production';
-  private readonly isVercel = !!process.env.VERCEL;
 
   constructor(
     private readonly authService: AuthService,
@@ -56,100 +52,34 @@ export class DashboardController {
   @UseGuards(DashboardAuthGuard)
   @Get('/dashboard/download/apk')
   async downloadApk(@Res() res: Response) {
-    const fileName = 'kiosk-launcher.apk';
-    
-    if (this.isVercel) {
-      // On Vercel: Use blob URL from environment variable
-      const blobUrl = process.env.APK_BLOB_URL;
-      if (blobUrl) {
-        return res.redirect(blobUrl);
+    // Try multiple possible APK locations
+    const possiblePaths = [
+      // Relative to portal directory
+      join(process.cwd(), '..', 'app', 'build', 'outputs', 'apk', 'release', 'app-release.apk'),
+      join(process.cwd(), '..', 'app', 'build', 'outputs', 'apk', 'debug', 'app-debug.apk'),
+      // In public directory
+      join(process.cwd(), 'public', 'kiosk.apk'),
+      join(process.cwd(), 'public', 'app-release.apk'),
+      // Environment variable path
+      process.env.APK_PATH,
+    ].filter(Boolean) as string[];
+
+    let apkPath: string | null = null;
+    for (const path of possiblePaths) {
+      if (path && existsSync(path)) {
+        apkPath = path;
+        break;
       }
-      return res.status(404).send('APK file not found. Please upload the APK file first.');
     }
 
-    // Local: Serve from public/apk directory
-    const apkPath = join(process.cwd(), 'public', 'apk', fileName);
-    if (!existsSync(apkPath)) {
-      return res.status(404).send('APK file not found. Please upload the APK file first.');
+    if (!apkPath) {
+      return res.status(404).send('APK file not found. Please ensure the APK is built and placed in the public directory or set APK_PATH environment variable.');
     }
 
+    const fileName = 'kiosk-launcher.apk';
     res.setHeader('Content-Type', 'application/vnd.android.package-archive');
     res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
     return res.sendFile(resolve(apkPath));
-  }
-
-  @UseGuards(DashboardAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN)
-  @Post('/dashboard/upload/apk')
-  @UseInterceptors(
-    FileInterceptor('apk', {
-      storage: process.env.VERCEL ? memoryStorage() : diskStorage({
-        destination: (req, file, cb) => {
-          // Use public/apk directory for local development
-          const uploadDir = join(process.cwd(), 'public', 'apk');
-          if (!existsSync(uploadDir)) {
-            mkdirSync(uploadDir, { recursive: true });
-          }
-          cb(null, uploadDir);
-        },
-        filename: (req, file, cb) => {
-          // Always save as kiosk-launcher.apk (replace existing)
-          cb(null, 'kiosk-launcher.apk');
-        },
-      }),
-      limits: {
-        fileSize: 100 * 1024 * 1024, // 100MB max
-      },
-      fileFilter: (req, file, cb) => {
-        if (file.mimetype === 'application/vnd.android.package-archive' || file.originalname.endsWith('.apk')) {
-          cb(null, true);
-        } else {
-          cb(new Error('Only APK files are allowed'), false);
-        }
-      },
-    }),
-  )
-  async uploadApk(
-    @UploadedFile() file: Express.Multer.File | undefined,
-    @Res() res: Response,
-  ) {
-    if (!file) {
-      return res.status(400).send('No file uploaded');
-    }
-
-    if (this.isVercel) {
-      // On Vercel: Upload to Vercel Blob Storage
-      if (!file.buffer) {
-        return res.status(400).send('File buffer is missing.');
-      }
-
-      const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
-      if (!blobToken) {
-        return res.status(500).send('BLOB_READ_WRITE_TOKEN not configured. Please set it in Vercel environment variables.');
-      }
-
-      try {
-        // @ts-expect-error - @vercel/blob may not be installed, handled at runtime
-        const { put } = await import('@vercel/blob');
-        
-        const blob = await put('kiosk-launcher.apk', file.buffer, {
-          access: 'public',
-          token: blobToken,
-          addRandomSuffix: false,
-        });
-
-        // Store the blob URL - user needs to set APK_BLOB_URL env var with this value
-        return res.redirect(`/dashboard/devices?status=APK uploaded! Set APK_BLOB_URL=${encodeURIComponent(blob.url)} in Vercel env vars, then download will work.`);
-      } catch (error: any) {
-        if (error.code === 'MODULE_NOT_FOUND' || error.message?.includes('@vercel/blob')) {
-          return res.status(500).send('Install @vercel/blob: npm install @vercel/blob');
-        }
-        return res.status(500).send(`Upload failed: ${error.message}`);
-      }
-    }
-
-    // Local: File already saved to public/apk by multer
-    return res.redirect('/dashboard/devices?status=APK uploaded successfully');
   }
 
   @Get('/dashboard/register')
