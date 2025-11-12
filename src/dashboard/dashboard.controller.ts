@@ -11,6 +11,8 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { Response, Request } from 'express';
+import { join, resolve } from 'path';
+import { existsSync } from 'fs';
 import { AuthService } from '../auth/auth.service';
 import { DevicesService } from '../devices/devices.service';
 import { CommandsService } from '../commands/commands.service';
@@ -45,6 +47,39 @@ export class DashboardController {
   @Get('/')
   async root(@Res() res: Response) {
     return res.redirect('/dashboard/devices');
+  }
+
+  @UseGuards(DashboardAuthGuard)
+  @Get('/dashboard/download/apk')
+  async downloadApk(@Res() res: Response) {
+    // Try multiple possible APK locations
+    const possiblePaths = [
+      // Relative to portal directory
+      join(process.cwd(), '..', 'app', 'build', 'outputs', 'apk', 'release', 'app-release.apk'),
+      join(process.cwd(), '..', 'app', 'build', 'outputs', 'apk', 'debug', 'app-debug.apk'),
+      // In public directory
+      join(process.cwd(), 'public', 'kiosk.apk'),
+      join(process.cwd(), 'public', 'app-release.apk'),
+      // Environment variable path
+      process.env.APK_PATH,
+    ].filter(Boolean) as string[];
+
+    let apkPath: string | null = null;
+    for (const path of possiblePaths) {
+      if (path && existsSync(path)) {
+        apkPath = path;
+        break;
+      }
+    }
+
+    if (!apkPath) {
+      return res.status(404).send('APK file not found. Please ensure the APK is built and placed in the public directory or set APK_PATH environment variable.');
+    }
+
+    const fileName = 'kiosk-launcher.apk';
+    res.setHeader('Content-Type', 'application/vnd.android.package-archive');
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    return res.sendFile(resolve(apkPath));
   }
 
   @Get('/dashboard/register')
@@ -332,12 +367,22 @@ export class DashboardController {
     const device = await this.devicesService.getDeviceOrThrow(id);
     const commands = await this.commandsService.listCommands(id);
     const latestHeartbeat = await this.devicesService.getLatestHeartbeat(id);
+    const user = (req as any).user;
+    const userRole = user?.role;
+    
+    // Only ADMIN and TECHNICIAN can view QR codes and sensitive provisioning data
+    const canViewQr = userRole === UserRole.ADMIN || userRole === UserRole.TECHNICIAN;
+    
     const provisioning = {
       portal_url: process.env.PORTAL_URL ?? '',
       device_id: device.id,
-      device_token: token ?? 'Rotate token to view a fresh value.',
+      device_token: canViewQr 
+        ? (token ?? 'Rotate token to view a fresh value.')
+        : 'Access restricted',
       allowed_package: device.allowedPackage,
-      initial_pin: device.initialPinPlaintext ?? '1234', // Use stored PIN or default
+      initial_pin: canViewQr 
+        ? (device.initialPinPlaintext ?? '1234')
+        : 'Access restricted',
       expected_device_serial: device.expectedDeviceSerial,
     };
 
@@ -349,9 +394,10 @@ export class DashboardController {
       status,
       token,
       provisioning,
-      user: (req as any).user,
+      user,
+      canViewQr,
       qr:
-        showQr !== undefined
+        showQr !== undefined && canViewQr
           ? await generateProvisioningQr(provisioning)
           : undefined,
     });

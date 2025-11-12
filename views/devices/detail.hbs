@@ -109,6 +109,7 @@
       <div class="card">
         <div class="card-header">
           <h3>Provisioning Extras</h3>
+          {{#if canViewQr}}
           <div class="card-actions">
             {{#if qr}}
               <a class="btn-link secondary" href="/dashboard/devices/{{device.id}}">Hide QR</a>
@@ -116,7 +117,15 @@
               <a class="btn-link secondary" href="/dashboard/devices/{{device.id}}?showQr=1">Show QR</a>
             {{/if}}
           </div>
+          {{/if}}
         </div>
+        {{#unless canViewQr}}
+        <div style="padding: 16px; background-color: #f5f5f5; border-radius: 4px; margin-bottom: 16px;">
+          <p style="margin: 0; color: #666;">
+            <strong>Access Restricted:</strong> QR codes and sensitive provisioning data are only available to Administrators and Technicians. Contact an administrator if you need to provision a device.
+          </p>
+        </div>
+        {{/unless}}
         <ul class="kv-list">
           <li class="kv-list__item">
             <span class="kv-list__label">Portal URL</span>

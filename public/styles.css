@@ -400,3 +400,63 @@ button.danger {
   word-break: break-word;
 }
 
+.download-apk-btn {
+  position: fixed;
+  bottom: 2rem;
+  left: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1.25rem;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  color: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.3);
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  z-index: 1000;
+  border: none;
+  cursor: pointer;
+}
+
+.download-apk-btn:hover {
+  background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+  transform: translateY(-2px);
+  text-decoration: none;
+}
+
+.download-apk-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+}
+
+.download-apk-btn svg {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+}
+
+.download-apk-btn span {
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .download-apk-btn {
+    bottom: 1rem;
+    left: 1rem;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    justify-content: center;
+    padding: 0;
+    font-size: 0.875rem;
+  }
+  
+  .download-apk-btn span {
+    display: none;
+  }
+}
+
