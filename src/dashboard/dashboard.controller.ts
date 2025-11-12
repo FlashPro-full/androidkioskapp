@@ -24,6 +24,7 @@ import { DashboardUnauthorizedFilter } from './dashboard-unauthorized.filter';
 import { CreateDeviceDto } from '../devices/dto/create-device.dto';
 import { generateProvisioningQr } from './provisioning-qr';
 import { UsersService } from '../users/users.service';
+import { ConfigService } from '@nestjs/config';
 
 const SESSION_COOKIE = 'session_token';
 
@@ -38,6 +39,7 @@ export class DashboardController {
     private readonly commandsService: CommandsService,
     private readonly jwtService: JwtService,
     private readonly usersService: UsersService,
+    private readonly configService: ConfigService,
   ) {}
 
   @Get('/')
@@ -463,8 +465,15 @@ export class DashboardController {
     @Res() res: Response,
   ) {
     const users = await this.usersService.findAll();
+    // Get the initial admin username to exclude from pending list
+    const initialAdminUsername =
+      this.configService.get<string>('ADMIN_USERNAME') ?? 'paulkiosk123';
+    
     // Separate pending and active users for the view
-    const pendingUsers = users.filter((u) => u.status === 'PENDING');
+    // Exclude the initial admin from pending users (it's already active)
+    const pendingUsers = users.filter(
+      (u) => u.status === 'PENDING' && u.username !== initialAdminUsername,
+    );
     const activeUsers = users.filter((u) => u.status === 'ACTIVE');
     return res.render('users/list', {
       title: 'Users',
