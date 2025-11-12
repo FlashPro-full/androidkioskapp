@@ -16,6 +16,19 @@
               {{/if}}
             </div>
           </div>
+          {{#if (eq user.role 'ADMIN')}}
+          <div class="apk-upload-section">
+            <h3>APK Management</h3>
+            <form method="post" action="/dashboard/upload/apk" enctype="multipart/form-data" class="apk-upload-form">
+              <div class="form-group">
+                <label for="apk-file">Upload/Replace Kiosk APK</label>
+                <input type="file" id="apk-file" name="apk" accept=".apk,application/vnd.android.package-archive" required>
+                <small>Maximum file size: 100MB. This will replace any existing uploaded APK.</small>
+              </div>
+              <button type="submit" class="btn-primary">Upload APK</button>
+            </form>
+          </div>
+          {{/if}}
           {{#if devices.length}}
             <table>
               <thead>

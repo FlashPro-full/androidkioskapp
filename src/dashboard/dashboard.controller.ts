@@ -12,7 +12,10 @@ import {
 } from '@nestjs/common';
 import { Response, Request } from 'express';
 import { join, resolve } from 'path';
-import { existsSync } from 'fs';
+import { existsSync, mkdirSync } from 'fs';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { UseInterceptors, UploadedFile } from '@nestjs/common';
+import { diskStorage } from 'multer';
 import { AuthService } from '../auth/auth.service';
 import { DevicesService } from '../devices/devices.service';
 import { CommandsService } from '../commands/commands.service';
@@ -52,8 +55,10 @@ export class DashboardController {
   @UseGuards(DashboardAuthGuard)
   @Get('/dashboard/download/apk')
   async downloadApk(@Res() res: Response) {
-    // Try multiple possible APK locations
+    // Try multiple possible APK locations (prioritize uploaded APK)
     const possiblePaths = [
+      // Uploaded APK (highest priority)
+      join(process.cwd(), 'public', 'uploads', 'kiosk-launcher.apk'),
       // Relative to portal directory
       join(process.cwd(), '..', 'app', 'build', 'outputs', 'apk', 'release', 'app-release.apk'),
       join(process.cwd(), '..', 'app', 'build', 'outputs', 'apk', 'debug', 'app-debug.apk'),
@@ -80,6 +85,47 @@ export class DashboardController {
     res.setHeader('Content-Type', 'application/vnd.android.package-archive');
     res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
     return res.sendFile(resolve(apkPath));
+  }
+
+  @UseGuards(DashboardAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Post('/dashboard/upload/apk')
+  @UseInterceptors(
+    FileInterceptor('apk', {
+      storage: diskStorage({
+        destination: (req, file, cb) => {
+          const uploadDir = join(process.cwd(), 'public', 'uploads');
+          if (!existsSync(uploadDir)) {
+            mkdirSync(uploadDir, { recursive: true });
+          }
+          cb(null, uploadDir);
+        },
+        filename: (req, file, cb) => {
+          // Always save as kiosk-launcher.apk (replace existing)
+          cb(null, 'kiosk-launcher.apk');
+        },
+      }),
+      limits: {
+        fileSize: 100 * 1024 * 1024, // 100MB max
+      },
+      fileFilter: (req, file, cb) => {
+        if (file.mimetype === 'application/vnd.android.package-archive' || file.originalname.endsWith('.apk')) {
+          cb(null, true);
+        } else {
+          cb(new Error('Only APK files are allowed'), false);
+        }
+      },
+    }),
+  )
+  async uploadApk(
+    @UploadedFile() file: Express.Multer.File,
+    @Res() res: Response,
+  ) {
+    if (!file) {
+      return res.status(400).send('No file uploaded');
+    }
+
+    return res.redirect('/dashboard/devices?status=APK uploaded successfully');
   }
 
   @Get('/dashboard/register')

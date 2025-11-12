@@ -16,6 +16,7 @@ async function bootstrap() {
   app.enableCors();
   app.use(cookieParser());
   app.use(express.urlencoded({ extended: true }));
+  app.use(express.json({ limit: '50mb' }));
   app.setBaseViewsDir(join(__dirname, '..', 'views'));
   app.setViewEngine('hbs');
   const viewsDir = join(__dirname, '..', 'views');
