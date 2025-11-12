@@ -55,6 +55,8 @@ async function bootstrap() {
   });
   app.setViewEngine('hbs');
   app.useStaticAssets(join(__dirname, '..', 'public'));
+  // Serve APK files from public/apk directory
+  app.use('/apk', express.static(join(__dirname, '..', 'public', 'apk')));
 
   app.useGlobalPipes(
     new ValidationPipe({

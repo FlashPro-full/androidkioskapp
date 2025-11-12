@@ -58,47 +58,19 @@ export class DashboardController {
   async downloadApk(@Res() res: Response) {
     const fileName = 'kiosk-launcher.apk';
     
-    // On Vercel, check /tmp first, then fall back to other options
     if (this.isVercel) {
-      const tmpPath = join('/tmp', 'kiosk-launcher.apk');
-      if (existsSync(tmpPath)) {
-        const fileBuffer = readFileSync(tmpPath);
-        res.setHeader('Content-Type', 'application/vnd.android.package-archive');
-        res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
-        return res.send(fileBuffer);
+      // On Vercel: Use blob URL from environment variable
+      const blobUrl = process.env.APK_BLOB_URL;
+      if (blobUrl) {
+        return res.redirect(blobUrl);
       }
-      // On Vercel, if not in /tmp, check for environment variable with base64 encoded APK
-      // or use Vercel Blob Storage URL
-      if (process.env.APK_BLOB_URL) {
-        return res.redirect(process.env.APK_BLOB_URL);
-      }
-      return res.status(404).send('APK file not found on Vercel. Please upload the APK file first, or configure APK_BLOB_URL environment variable.');
+      return res.status(404).send('APK file not found. Please upload the APK file first.');
     }
 
-    // Local development: Try multiple possible APK locations (prioritize uploaded APK)
-    const possiblePaths = [
-      // Uploaded APK (highest priority)
-      join(process.cwd(), 'public', 'uploads', 'kiosk-launcher.apk'),
-      // Relative to portal directory
-      join(process.cwd(), '..', 'app', 'build', 'outputs', 'apk', 'release', 'app-release.apk'),
-      join(process.cwd(), '..', 'app', 'build', 'outputs', 'apk', 'debug', 'app-debug.apk'),
-      // In public directory
-      join(process.cwd(), 'public', 'kiosk.apk'),
-      join(process.cwd(), 'public', 'app-release.apk'),
-      // Environment variable path
-      process.env.APK_PATH,
-    ].filter(Boolean) as string[];
-
-    let apkPath: string | null = null;
-    for (const path of possiblePaths) {
-      if (path && existsSync(path)) {
-        apkPath = path;
-        break;
-      }
-    }
-
-    if (!apkPath) {
-      return res.status(404).send('APK file not found. Please ensure the APK is built and placed in the public directory or set APK_PATH environment variable.');
+    // Local: Serve from public/apk directory
+    const apkPath = join(process.cwd(), 'public', 'apk', fileName);
+    if (!existsSync(apkPath)) {
+      return res.status(404).send('APK file not found. Please upload the APK file first.');
     }
 
     res.setHeader('Content-Type', 'application/vnd.android.package-archive');
@@ -113,7 +85,8 @@ export class DashboardController {
     FileInterceptor('apk', {
       storage: process.env.VERCEL ? memoryStorage() : diskStorage({
         destination: (req, file, cb) => {
-          const uploadDir = join(process.cwd(), 'public', 'uploads');
+          // Use public/apk directory for local development
+          const uploadDir = join(process.cwd(), 'public', 'apk');
           if (!existsSync(uploadDir)) {
             mkdirSync(uploadDir, { recursive: true });
           }
@@ -144,24 +117,38 @@ export class DashboardController {
       return res.status(400).send('No file uploaded');
     }
 
-    // On Vercel, save to /tmp (ephemeral but works for current request)
-    // For production, consider using Vercel Blob Storage or S3
     if (this.isVercel) {
+      // On Vercel: Upload to Vercel Blob Storage
+      if (!file.buffer) {
+        return res.status(400).send('File buffer is missing.');
+      }
+
+      const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
+      if (!blobToken) {
+        return res.status(500).send('BLOB_READ_WRITE_TOKEN not configured. Please set it in Vercel environment variables.');
+      }
+
       try {
-        if (!file.buffer) {
-          return res.status(400).send('File buffer is missing. This may occur if not using memory storage.');
+        // @ts-expect-error - @vercel/blob may not be installed, handled at runtime
+        const { put } = await import('@vercel/blob');
+        
+        const blob = await put('kiosk-launcher.apk', file.buffer, {
+          access: 'public',
+          token: blobToken,
+          addRandomSuffix: false,
+        });
+
+        // Store the blob URL - user needs to set APK_BLOB_URL env var with this value
+        return res.redirect(`/dashboard/devices?status=APK uploaded! Set APK_BLOB_URL=${encodeURIComponent(blob.url)} in Vercel env vars, then download will work.`);
+      } catch (error: any) {
+        if (error.code === 'MODULE_NOT_FOUND' || error.message?.includes('@vercel/blob')) {
+          return res.status(500).send('Install @vercel/blob: npm install @vercel/blob');
         }
-        const tmpPath = join('/tmp', 'kiosk-launcher.apk');
-        writeFileSync(tmpPath, file.buffer);
-        // Store in environment variable or use Vercel Blob Storage for persistence
-        // For now, this works but file is lost after function execution
-        // TODO: Integrate with Vercel Blob Storage for persistence
-      } catch (error) {
-        console.error('Error saving file on Vercel:', error);
-        return res.status(500).send('Failed to save file on Vercel. Consider using Vercel Blob Storage.');
+        return res.status(500).send(`Upload failed: ${error.message}`);
       }
     }
 
+    // Local: File already saved to public/apk by multer
     return res.redirect('/dashboard/devices?status=APK uploaded successfully');
   }
 
