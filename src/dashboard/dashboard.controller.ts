@@ -118,7 +118,7 @@ export class DashboardController {
     }),
   )
   async uploadApk(
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFile() file: Express.Multer.File | undefined,
     @Res() res: Response,
   ) {
     if (!file) {
