@@ -19,107 +19,115 @@
         {{#if users.length}}
           {{#if pendingUsers.length}}
           <h3 style="margin-top: 24px; margin-bottom: 12px;">Pending Approval ({{pendingUsers.length}})</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>Username</th>
-                <th>Role</th>
-                <th>Created</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {{#each pendingUsers}}
+          <div class="table-wrapper">
+            <table class="users-table">
+              <thead>
                 <tr>
-                  <td>{{this.username}}</td>
-                  <td>
-                    <span class="status-badge status-PENDING">
-                      PENDING
-                    </span>
-                  </td>
-                  <td>{{formatDate this.createdAt}}</td>
-                  <td>
-                    <form
-                      method="post"
-                      action="/dashboard/users/{{this.id}}/update"
-                      style="display: inline-block;"
-                    >
-                      <select name="role" style="margin-right: 8px;">
-                        <option value="VIEWER" {{#if (eq this.role 'VIEWER')}}selected{{/if}}>VIEWER</option>
-                        <option value="TECHNICIAN" {{#if (eq this.role 'TECHNICIAN')}}selected{{/if}}>TECHNICIAN</option>
-                        <option value="ADMIN" {{#if (eq this.role 'ADMIN')}}selected{{/if}}>ADMIN</option>
-                      </select>
-                      <input type="hidden" name="status" value="ACTIVE" />
-                      <button type="submit" class="btn-link primary">Approve & Set Role</button>
-                    </form>
-                    <form
-                      method="post"
-                      action="/dashboard/users/{{this.id}}/delete"
-                      style="display: inline; margin-left: 8px;"
-                      onsubmit="return confirm('Are you sure you want to delete this user?');"
-                    >
-                      <button type="submit" class="btn-link danger">Delete</button>
-                    </form>
-                  </td>
+                  <th>Username</th>
+                  <th>Role</th>
+                  <th>Created</th>
+                  <th class="actions-column">Actions</th>
                 </tr>
-              {{/each}}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {{#each pendingUsers}}
+                  <tr>
+                    <td>{{this.username}}</td>
+                    <td>
+                      <span class="status-badge status-PENDING">
+                        PENDING
+                      </span>
+                    </td>
+                    <td>{{formatDate this.createdAt}}</td>
+                    <td>
+                      <div class="user-actions">
+                        <form
+                          method="post"
+                          action="/dashboard/users/{{this.id}}/update"
+                          class="user-action-form"
+                        >
+                          <select name="role" class="role-select">
+                            <option value="VIEWER" {{#if (eq this.role 'VIEWER')}}selected{{/if}}>VIEWER</option>
+                            <option value="TECHNICIAN" {{#if (eq this.role 'TECHNICIAN')}}selected{{/if}}>TECHNICIAN</option>
+                            <option value="ADMIN" {{#if (eq this.role 'ADMIN')}}selected{{/if}}>ADMIN</option>
+                          </select>
+                          <input type="hidden" name="status" value="ACTIVE" />
+                          <button type="submit" class="btn-link primary">Approve & Set Role</button>
+                        </form>
+                        <form
+                          method="post"
+                          action="/dashboard/users/{{this.id}}/delete"
+                          class="user-action-form"
+                          onsubmit="return confirm('Are you sure you want to delete this user?');"
+                        >
+                          <button type="submit" class="btn-link danger">Delete</button>
+                        </form>
+                      </div>
+                    </td>
+                  </tr>
+                {{/each}}
+              </tbody>
+            </table>
+          </div>
           {{/if}}
 
           <h3 style="margin-top: 32px; margin-bottom: 12px;">Active Users ({{activeUsers.length}})</h3>
           {{#if activeUsers.length}}
-          <table>
-            <thead>
-              <tr>
-                <th>Username</th>
-                <th>Role</th>
-                <th>Status</th>
-                <th>Created</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {{#each activeUsers}}
+          <div class="table-wrapper">
+            <table class="users-table">
+              <thead>
                 <tr>
-                  <td>{{this.username}}</td>
-                  <td>
-                    <span class="status-badge status-{{this.role}}">
-                      {{this.role}}
-                    </span>
-                  </td>
-                  <td>
-                    <span class="status-badge status-ACTIVE">
-                      ACTIVE
-                    </span>
-                  </td>
-                  <td>{{formatDate this.createdAt}}</td>
-                  <td>
-                    <form
-                      method="post"
-                      action="/dashboard/users/{{this.id}}/delete"
-                      style="display: inline;"
-                      onsubmit="return confirm('Are you sure you want to delete this user?');"
-                    >
-                      <button type="submit" class="btn-link danger">Delete</button>
-                    </form>
-                    <form
-                      method="post"
-                      action="/dashboard/users/{{this.id}}/update"
-                      style="display: inline-block; margin-left: 8px;"
-                    >
-                      <select name="role" style="margin-right: 8px;">
-                        <option value="VIEWER" {{#if (eq this.role 'VIEWER')}}selected{{/if}}>VIEWER</option>
-                        <option value="TECHNICIAN" {{#if (eq this.role 'TECHNICIAN')}}selected{{/if}}>TECHNICIAN</option>
-                        <option value="ADMIN" {{#if (eq this.role 'ADMIN')}}selected{{/if}}>ADMIN</option>
-                      </select>
-                      <button type="submit" class="btn-link secondary">Update Role</button>
-                    </form>
-                  </td>
+                  <th>Username</th>
+                  <th>Role</th>
+                  <th>Status</th>
+                  <th>Created</th>
+                  <th class="actions-column">Actions</th>
                 </tr>
-              {{/each}}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {{#each activeUsers}}
+                  <tr>
+                    <td>{{this.username}}</td>
+                    <td>
+                      <span class="status-badge status-{{this.role}}">
+                        {{this.role}}
+                      </span>
+                    </td>
+                    <td>
+                      <span class="status-badge status-ACTIVE">
+                        ACTIVE
+                      </span>
+                    </td>
+                    <td>{{formatDate this.createdAt}}</td>
+                    <td>
+                      <div class="user-actions">
+                        <form
+                          method="post"
+                          action="/dashboard/users/{{this.id}}/update"
+                          class="user-action-form"
+                        >
+                          <select name="role" class="role-select">
+                            <option value="VIEWER" {{#if (eq this.role 'VIEWER')}}selected{{/if}}>VIEWER</option>
+                            <option value="TECHNICIAN" {{#if (eq this.role 'TECHNICIAN')}}selected{{/if}}>TECHNICIAN</option>
+                            <option value="ADMIN" {{#if (eq this.role 'ADMIN')}}selected{{/if}}>ADMIN</option>
+                          </select>
+                          <button type="submit" class="btn-link secondary">Update</button>
+                        </form>
+                        <form
+                          method="post"
+                          action="/dashboard/users/{{this.id}}/delete"
+                          class="user-action-form"
+                          onsubmit="return confirm('Are you sure you want to delete this user?');"
+                        >
+                          <button type="submit" class="btn-link danger">Delete</button>
+                        </form>
+                      </div>
+                    </td>
+                  </tr>
+                {{/each}}
+              </tbody>
+            </table>
+          </div>
           {{else}}
             <p>No active users.</p>
           {{/if}}

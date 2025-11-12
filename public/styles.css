@@ -22,7 +22,7 @@ a:hover {
 }
 
 .container {
-  max-width: 960px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 0 1.5rem;
 }
@@ -257,6 +257,12 @@ button.danger {
   align-items: center;
 }
 
+.bulk-form {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
 .bulk-form table input[type='checkbox'] {
   width: 18px;
   height: 18px;
@@ -430,17 +436,173 @@ button.danger {
   color: #475569;
 }
 
-.apk-upload-form input[type="file"] {
-  padding: 0.5rem;
-  border: 1px solid #cbd5e1;
-  border-radius: 6px;
-  background: #fff;
-  font-size: 0.95rem;
-}
-
 .apk-upload-form small {
   color: #64748b;
   font-size: 0.875rem;
+}
+
+/* Smart File Input Styling */
+.file-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.file-input {
+  position: absolute;
+  width: 0.1px;
+  height: 0.1px;
+  opacity: 0;
+  overflow: hidden;
+  z-index: -1;
+}
+
+.file-input-label {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.75rem 1.25rem;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  color: #fff;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
+  border: none;
+}
+
+.file-input-label:hover {
+  background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+  transform: translateY(-1px);
+}
+
+.file-input-label:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.2);
+}
+
+.file-input-label svg {
+  flex-shrink: 0;
+}
+
+.file-input-text {
+  white-space: nowrap;
+}
+
+.file-name {
+  color: #64748b;
+  font-size: 0.9rem;
+  font-style: italic;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-input:focus + .file-input-label {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+/* Users Table Styling */
+.table-wrapper {
+  overflow-x: auto;
+  margin: 1rem 0;
+}
+
+.users-table {
+  width: 100%;
+  min-width: 800px;
+  border-collapse: collapse;
+}
+
+.users-table th,
+.users-table td {
+  padding: 0.875rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.users-table th {
+  background: #f1f5f9;
+  font-weight: 600;
+  color: #475569;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.users-table .actions-column {
+  min-width: 300px;
+  width: 300px;
+}
+
+.user-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: flex-start;
+}
+
+.user-action-form {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.role-select {
+  padding: 0.5rem 0.75rem;
+  border: 2px solid #cbd5e1;
+  border-radius: 6px;
+  background: #fff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1f2933;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 140px;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23475569' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 12px;
+  padding-right: 2.5rem;
+}
+
+.role-select:hover {
+  border-color: #2563eb;
+  background-color: #f8fafc;
+}
+
+.role-select:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.role-select option {
+  padding: 0.5rem;
+  font-weight: 600;
+}
+
+@media (min-width: 1024px) {
+  .users-table {
+    min-width: 1000px;
+  }
+  
+  .users-table .actions-column {
+    min-width: 350px;
+    width: 350px;
+  }
+  
+  .user-actions {
+    flex-direction: row;
+    align-items: center;
+  }
 }
 
 .download-apk-btn {

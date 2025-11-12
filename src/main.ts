@@ -26,6 +26,8 @@ async function bootstrap() {
     JSON.stringify(context, null, 2),
   );
   hbs.registerHelper('year', () => new Date().getFullYear());
+  hbs.registerHelper('eq', (a: any, b: any) => a === b);
+  hbs.registerHelper('or', (a: any, b: any) => a || b);
   hbs.registerHelper('statusLabel', (status: string) => {
     switch (status) {
       case 'ONLINE':
