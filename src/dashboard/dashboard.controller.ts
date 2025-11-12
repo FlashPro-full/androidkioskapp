@@ -12,10 +12,10 @@ import {
 } from '@nestjs/common';
 import { Response, Request } from 'express';
 import { join, resolve } from 'path';
-import { existsSync, mkdirSync } from 'fs';
+import { existsSync, mkdirSync, writeFileSync, readFileSync } from 'fs';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UseInterceptors, UploadedFile } from '@nestjs/common';
-import { diskStorage } from 'multer';
+import { diskStorage, memoryStorage } from 'multer';
 import { AuthService } from '../auth/auth.service';
 import { DevicesService } from '../devices/devices.service';
 import { CommandsService } from '../commands/commands.service';
@@ -37,6 +37,7 @@ const SESSION_COOKIE = 'session_token';
 @Controller()
 export class DashboardController {
   private readonly isProduction = process.env.NODE_ENV === 'production';
+  private readonly isVercel = !!process.env.VERCEL;
 
   constructor(
     private readonly authService: AuthService,
@@ -55,7 +56,26 @@ export class DashboardController {
   @UseGuards(DashboardAuthGuard)
   @Get('/dashboard/download/apk')
   async downloadApk(@Res() res: Response) {
-    // Try multiple possible APK locations (prioritize uploaded APK)
+    const fileName = 'kiosk-launcher.apk';
+    
+    // On Vercel, check /tmp first, then fall back to other options
+    if (this.isVercel) {
+      const tmpPath = join('/tmp', 'kiosk-launcher.apk');
+      if (existsSync(tmpPath)) {
+        const fileBuffer = readFileSync(tmpPath);
+        res.setHeader('Content-Type', 'application/vnd.android.package-archive');
+        res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+        return res.send(fileBuffer);
+      }
+      // On Vercel, if not in /tmp, check for environment variable with base64 encoded APK
+      // or use Vercel Blob Storage URL
+      if (process.env.APK_BLOB_URL) {
+        return res.redirect(process.env.APK_BLOB_URL);
+      }
+      return res.status(404).send('APK file not found on Vercel. Please upload the APK file first, or configure APK_BLOB_URL environment variable.');
+    }
+
+    // Local development: Try multiple possible APK locations (prioritize uploaded APK)
     const possiblePaths = [
       // Uploaded APK (highest priority)
       join(process.cwd(), 'public', 'uploads', 'kiosk-launcher.apk'),
@@ -81,7 +101,6 @@ export class DashboardController {
       return res.status(404).send('APK file not found. Please ensure the APK is built and placed in the public directory or set APK_PATH environment variable.');
     }
 
-    const fileName = 'kiosk-launcher.apk';
     res.setHeader('Content-Type', 'application/vnd.android.package-archive');
     res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
     return res.sendFile(resolve(apkPath));
@@ -92,7 +111,7 @@ export class DashboardController {
   @Post('/dashboard/upload/apk')
   @UseInterceptors(
     FileInterceptor('apk', {
-      storage: diskStorage({
+      storage: process.env.VERCEL ? memoryStorage() : diskStorage({
         destination: (req, file, cb) => {
           const uploadDir = join(process.cwd(), 'public', 'uploads');
           if (!existsSync(uploadDir)) {
@@ -123,6 +142,24 @@ export class DashboardController {
   ) {
     if (!file) {
       return res.status(400).send('No file uploaded');
+    }
+
+    // On Vercel, save to /tmp (ephemeral but works for current request)
+    // For production, consider using Vercel Blob Storage or S3
+    if (this.isVercel) {
+      try {
+        if (!file.buffer) {
+          return res.status(400).send('File buffer is missing. This may occur if not using memory storage.');
+        }
+        const tmpPath = join('/tmp', 'kiosk-launcher.apk');
+        writeFileSync(tmpPath, file.buffer);
+        // Store in environment variable or use Vercel Blob Storage for persistence
+        // For now, this works but file is lost after function execution
+        // TODO: Integrate with Vercel Blob Storage for persistence
+      } catch (error) {
+        console.error('Error saving file on Vercel:', error);
+        return res.status(500).send('Failed to save file on Vercel. Consider using Vercel Blob Storage.');
+      }
     }
 
     return res.redirect('/dashboard/devices?status=APK uploaded successfully');
