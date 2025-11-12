@@ -13,6 +13,10 @@ export class HeartbeatDto {
 
   @IsOptional()
   @IsString()
+  deviceSerial?: string;
+
+  @IsOptional()
+  @IsString()
   notes?: string;
 }
 

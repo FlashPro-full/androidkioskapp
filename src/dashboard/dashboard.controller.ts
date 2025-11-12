@@ -257,18 +257,20 @@ export class DashboardController {
   ) {
     const device = await this.devicesService.getDeviceOrThrow(id);
     const commands = await this.commandsService.listCommands(id);
+    const latestHeartbeat = await this.devicesService.getLatestHeartbeat(id);
     const provisioning = {
       portal_url: process.env.PORTAL_URL ?? '',
       device_id: device.id,
       device_token: token ?? 'Rotate token to view a fresh value.',
       allowed_package: device.allowedPackage,
-      initial_pin: 'Use PIN command to rotate',
+      initial_pin: device.initialPinPlaintext ?? '1234', // Use stored PIN or default
     };
 
     return res.render('devices/detail', {
       title: device.displayName,
       device,
       commands,
+      latestHeartbeat,
       status,
       token,
       provisioning,

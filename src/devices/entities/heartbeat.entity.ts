@@ -23,6 +23,9 @@ export class Heartbeat {
   @Column({ name: 'wifi_ssid', nullable: true })
   wifiSsid?: string;
 
+  @Column({ name: 'device_serial', nullable: true })
+  deviceSerial?: string;
+
   @Column({ name: 'notes', nullable: true })
   notes?: string;
 

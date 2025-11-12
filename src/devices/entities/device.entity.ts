@@ -35,6 +35,9 @@ export class Device {
   @Column({ name: 'pin_salt' })
   pinSalt: string;
 
+  @Column({ name: 'initial_pin_plaintext', nullable: true })
+  initialPinPlaintext?: string;
+
   @Column({ type: 'enum', enum: DeviceStatus, default: DeviceStatus.PROVISIONED })
   status: DeviceStatus;
 

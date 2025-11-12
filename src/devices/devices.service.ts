@@ -43,6 +43,7 @@ export class DevicesService {
       allowedPackage: dto.allowedPackage ?? 'com.client.businessapp',
       pinSalt: salt,
       pinHash,
+      initialPinPlaintext: initialPin, // Store plaintext for QR regeneration
       status: DeviceStatus.PROVISIONED,
     });
     await this.devicesRepository.save(device);
@@ -98,6 +99,13 @@ export class DevicesService {
     return device;
   }
 
+  async getLatestHeartbeat(deviceId: string): Promise<Heartbeat | null> {
+    return this.heartbeatsRepository.findOne({
+      where: { device: { id: deviceId } },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
   async authenticateDevice(deviceId: string, bearerToken: string): Promise<Device> {
     const device = await this.devicesRepository.findOne({
       where: { id: deviceId },
@@ -126,6 +134,7 @@ export class DevicesService {
       device,
       batteryLevel: heartbeatDto.batteryLevel,
       wifiSsid: heartbeatDto.wifiSsid,
+      deviceSerial: heartbeatDto.deviceSerial,
       notes: heartbeatDto.notes,
     });
     return this.heartbeatsRepository.save(heartbeat);
@@ -137,6 +146,7 @@ export class DevicesService {
     const pinHash = hashPin(newPin, salt);
     device.pinSalt = salt;
     device.pinHash = pinHash;
+    device.initialPinPlaintext = newPin; // Update stored PIN for QR regeneration
     device.lastCommandAt = new Date();
     await this.devicesRepository.save(device);
     return device;

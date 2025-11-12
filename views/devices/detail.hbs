@@ -38,6 +38,14 @@
             <span class="device-summary__label">Last command</span>
             <span class="device-summary__value">{{formatDate device.lastCommandAt}}</span>
           </span>
+          {{#if latestHeartbeat}}
+            {{#if latestHeartbeat.deviceSerial}}
+            <span class="device-summary__row">
+              <span class="device-summary__label">Device Serial</span>
+              <span class="device-summary__value"><code>{{latestHeartbeat.deviceSerial}}</code></span>
+            </span>
+            {{/if}}
+          {{/if}}
         </p>
 
         <div class="actions">
