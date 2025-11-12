@@ -252,14 +252,26 @@ export class DashboardController {
     @Req() req: Request,
     @Res() res: Response,
   ) {
-    const devices = await this.devicesService.findAll();
-    return res.render('devices/list', {
-      title: 'Devices',
-      devices,
-      status,
-      message,
-      user: (req as any).user,
-    });
+    try {
+      const devices = await this.devicesService.findAll();
+      const user = (req as any).user || null;
+      return res.render('devices/list', {
+        title: 'Devices',
+        devices: devices || [],
+        status,
+        message,
+        user,
+      });
+    } catch (error: any) {
+      console.error('Error in listDevices:', error);
+      return res.status(500).render('devices/list', {
+        title: 'Devices',
+        devices: [],
+        status: 'error',
+        message: error.message || 'An error occurred while loading devices',
+        user: (req as any).user || null,
+      });
+    }
   }
 
   @UseGuards(DashboardAuthGuard, RolesGuard)
@@ -345,15 +357,28 @@ export class DashboardController {
     @Req() req: Request,
     @Res() res: Response,
   ) {
-    return res.render('devices/new', {
-      title: 'Register Device',
-      status,
-      user: (req as any).user,
-      defaults: {
-        allowedPackage:
-          process.env.DEFAULT_ALLOWED_PACKAGE ?? 'com.client.businessapp',
-      },
-    });
+    try {
+      return res.render('devices/new', {
+        title: 'Register Device',
+        status,
+        user: (req as any).user || null,
+        defaults: {
+          allowedPackage:
+            process.env.DEFAULT_ALLOWED_PACKAGE ?? 'com.client.businessapp',
+        },
+      });
+    } catch (error: any) {
+      console.error('Error in showCreateDevice:', error);
+      return res.status(500).render('devices/new', {
+        title: 'Register Device',
+        status: 'error',
+        user: (req as any).user || null,
+        defaults: {
+          allowedPackage:
+            process.env.DEFAULT_ALLOWED_PACKAGE ?? 'com.client.businessapp',
+        },
+      });
+    }
   }
 
   @UseGuards(DashboardAuthGuard, RolesGuard)
@@ -410,43 +435,60 @@ export class DashboardController {
     @Req() req: Request,
     @Res() res: Response,
   ) {
-    const device = await this.devicesService.getDeviceOrThrow(id);
-    const commands = await this.commandsService.listCommands(id);
-    const latestHeartbeat = await this.devicesService.getLatestHeartbeat(id);
-    const user = (req as any).user;
-    const userRole = user?.role;
-    
-    // Only ADMIN and TECHNICIAN can view QR codes and sensitive provisioning data
-    const canViewQr = userRole === UserRole.ADMIN || userRole === UserRole.TECHNICIAN;
-    
-    const provisioning = {
-      portal_url: process.env.PORTAL_URL ?? '',
-      device_id: device.id,
-      device_token: canViewQr 
-        ? (token ?? 'Rotate token to view a fresh value.')
-        : 'Access restricted',
-      allowed_package: device.allowedPackage,
-      initial_pin: canViewQr 
-        ? (device.initialPinPlaintext ?? '1234')
-        : 'Access restricted',
-      expected_device_serial: device.expectedDeviceSerial,
-    };
+    try {
+      const device = await this.devicesService.getDeviceOrThrow(id);
+      const commands = await this.commandsService.listCommands(id);
+      const latestHeartbeat = await this.devicesService.getLatestHeartbeat(id);
+      const user = (req as any).user || null;
+      const userRole = user?.role;
+      
+      // Only ADMIN and TECHNICIAN can view QR codes and sensitive provisioning data
+      const canViewQr = userRole === UserRole.ADMIN || userRole === UserRole.TECHNICIAN;
+      
+      const provisioning = {
+        portal_url: process.env.PORTAL_URL ?? '',
+        device_id: device.id,
+        device_token: canViewQr 
+          ? (token ?? 'Rotate token to view a fresh value.')
+          : 'Access restricted',
+        allowed_package: device.allowedPackage,
+        initial_pin: canViewQr 
+          ? (device.initialPinPlaintext ?? '1234')
+          : 'Access restricted',
+        expected_device_serial: device.expectedDeviceSerial,
+      };
 
-    return res.render('devices/detail', {
-      title: device.displayName,
-      device,
-      commands,
-      latestHeartbeat,
-      status,
-      token,
-      provisioning,
-      user,
-      canViewQr,
-      qr:
-        showQr !== undefined && canViewQr
-          ? await generateProvisioningQr(provisioning)
-          : undefined,
-    });
+      return res.render('devices/detail', {
+        title: device.displayName,
+        device,
+        commands,
+        latestHeartbeat,
+        status,
+        token,
+        provisioning,
+        user,
+        canViewQr,
+        qr:
+          showQr !== undefined && canViewQr
+            ? await generateProvisioningQr(provisioning)
+            : undefined,
+      });
+    } catch (error: any) {
+      console.error('Error in showDevice:', error);
+      const user = (req as any).user || null;
+      return res.status(500).render('devices/detail', {
+        title: 'Device Details',
+        device: null,
+        commands: [],
+        latestHeartbeat: null,
+        status: 'error',
+        token: undefined,
+        provisioning: null,
+        user,
+        canViewQr: false,
+        qr: undefined,
+      });
+    }
   }
 
   @UseGuards(DashboardAuthGuard, RolesGuard)
@@ -556,26 +598,39 @@ export class DashboardController {
     @Req() req: Request,
     @Res() res: Response,
   ) {
-    const users = await this.usersService.findAll();
-    // Get the initial admin username to exclude from pending list
-    const initialAdminUsername =
-      this.configService.get<string>('ADMIN_USERNAME') ?? 'paulkiosk123';
-    
-    // Separate pending and active users for the view
-    // Exclude the initial admin from pending users (it's already active)
-    const pendingUsers = users.filter(
-      (u) => u.status === 'PENDING' && u.username !== initialAdminUsername,
-    );
-    const activeUsers = users.filter((u) => u.status === 'ACTIVE');
-    return res.render('users/list', {
-      title: 'Users',
-      users,
-      pendingUsers,
-      activeUsers,
-      status,
-      message,
-      user: (req as any).user,
-    });
+    try {
+      const users = await this.usersService.findAll();
+      // Get the initial admin username to exclude from pending list
+      const initialAdminUsername =
+        this.configService.get<string>('ADMIN_USERNAME') ?? 'paulkiosk123';
+      
+      // Separate pending and active users for the view
+      // Exclude the initial admin from pending users (it's already active)
+      const pendingUsers = users.filter(
+        (u) => u.status === 'PENDING' && u.username !== initialAdminUsername,
+      );
+      const activeUsers = users.filter((u) => u.status === 'ACTIVE');
+      return res.render('users/list', {
+        title: 'Users',
+        users,
+        pendingUsers,
+        activeUsers,
+        status,
+        message,
+        user: (req as any).user || null,
+      });
+    } catch (error: any) {
+      console.error('Error in listUsers:', error);
+      return res.status(500).render('users/list', {
+        title: 'Users',
+        users: [],
+        pendingUsers: [],
+        activeUsers: [],
+        status: 'error',
+        message: error.message || 'An error occurred while loading users',
+        user: (req as any).user || null,
+      });
+    }
   }
 
   @UseGuards(DashboardAuthGuard, RolesGuard)
@@ -586,11 +641,20 @@ export class DashboardController {
     @Req() req: Request,
     @Res() res: Response,
   ) {
-    return res.render('users/new', {
-      title: 'Create User',
-      status,
-      user: (req as any).user,
-    });
+    try {
+      return res.render('users/new', {
+        title: 'Create User',
+        status,
+        user: (req as any).user || null,
+      });
+    } catch (error: any) {
+      console.error('Error in showCreateUser:', error);
+      return res.status(500).render('users/new', {
+        title: 'Create User',
+        status: 'error',
+        user: (req as any).user || null,
+      });
+    }
   }
 
   @UseGuards(DashboardAuthGuard, RolesGuard)

@@ -11,25 +11,30 @@
           <div class="card-header">
             <h2>Registered Devices</h2>
             <div class="card-actions">
-              {{#if (eq user.role 'ADMIN')}}
-              <a class="btn-link" href="/dashboard/devices/new">+ Register Device</a>
+              {{#if user}}
+                {{#if (eq user.role 'ADMIN')}}
+                <a class="btn-link" href="/dashboard/devices/new">+ Register Device</a>
+                {{/if}}
               {{/if}}
             </div>
           </div>
-          {{#if (eq user.role 'ADMIN')}}
-          <div class="apk-upload-section">
-            <h3>APK Management</h3>
-            <form method="post" action="/dashboard/upload/apk" enctype="multipart/form-data" class="apk-upload-form">
-              <div class="form-group">
-                <label for="apk-file">Upload/Replace Kiosk APK</label>
-                <input type="file" id="apk-file" name="apk" accept=".apk,application/vnd.android.package-archive" required>
-                <small>Maximum file size: 100MB. This will replace any existing uploaded APK.</small>
-              </div>
-              <button type="submit" class="btn-primary">Upload APK</button>
-            </form>
-          </div>
+          {{#if user}}
+            {{#if (eq user.role 'ADMIN')}}
+            <div class="apk-upload-section">
+              <h3>APK Management</h3>
+              <form method="post" action="/dashboard/upload/apk" enctype="multipart/form-data" class="apk-upload-form">
+                <div class="form-group">
+                  <label for="apk-file">Upload/Replace Kiosk APK</label>
+                  <input type="file" id="apk-file" name="apk" accept=".apk,application/vnd.android.package-archive" required>
+                  <small>Maximum file size: 100MB. This will replace any existing uploaded APK.</small>
+                </div>
+                <button type="submit" class="btn-primary">Upload APK</button>
+              </form>
+            </div>
+            {{/if}}
           {{/if}}
-          {{#if devices.length}}
+          {{#if devices}}
+            {{#if devices.length}}
             <table>
               <thead>
                 <tr>
@@ -62,8 +67,9 @@
                 {{/each}}
               </tbody>
             </table>
-            {{#if (or (eq user.role 'ADMIN') (eq user.role 'TECHNICIAN'))}}
-            <div class="bulk-actions">
+            {{#if user}}
+              {{#if (or (eq user.role 'ADMIN') (eq user.role 'TECHNICIAN'))}}
+              <div class="bulk-actions">
               <div class="bulk-actions__group">
                 <label>Bulk action</label>
                 <select name="action" required>
@@ -80,7 +86,11 @@
                 <input type="text" name="allowedPackage" placeholder="New package">
               </div>
               <button type="submit" class="btn-primary">Queue command</button>
-            </div>
+              </div>
+              {{/if}}
+            {{/if}}
+            {{else}}
+              <p>No devices registered yet.</p>
             {{/if}}
           {{else}}
             <p>No devices registered yet.</p>
