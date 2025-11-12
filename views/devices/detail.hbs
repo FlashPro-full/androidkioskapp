@@ -2,7 +2,7 @@
 <body>
   {{> nav}}
   <div class="page">
-    <div class="container">
+    <div class="container container--device-detail">
       {{#if status}}
         <div class="status-message">{{status}}</div>
       {{/if}}
@@ -50,33 +50,45 @@
 
         {{#if (or (eq user.role 'ADMIN') (eq user.role 'TECHNICIAN'))}}
         <div class="actions">
-          <form method="post" action="/dashboard/devices/{{device.id}}/commands/pin">
-            <div class="form-group">
-              <label for="pin">Rotate PIN</label>
-              <input type="number" id="pin" name="pin" minlength="4" required />
+          <form method="post" action="/dashboard/devices/{{device.id}}/commands/pin" class="action-form">
+            <div class="form-group-inline">
+              <div class="input-with-check">
+                <input type="text" id="pin" name="pin" minlength="4" placeholder="Rotate PIN" required data-original-value="" />
+                <button type="submit" class="check-btn" disabled title="Apply PIN change">
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M16.667 5L7.5 14.167 3.333 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </button>
+              </div>
             </div>
-            <button type="submit">Queue PIN Update</button>
           </form>
 
           <form
             method="post"
             action="/dashboard/devices/{{device.id}}/commands/package"
+            class="action-form"
           >
-            <div class="form-group">
-              <label for="allowedPackage">Allowed package</label>
-              <input
-                type="text"
-                id="allowedPackage"
-                name="allowedPackage"
-                value="{{device.allowedPackage}}"
-                required
-              />
+            <div class="form-group-inline">
+              <div class="input-with-check">
+                <input
+                  type="text"
+                  id="allowedPackage"
+                  name="allowedPackage"
+                  placeholder="Allowed package"
+                  value="{{device.allowedPackage}}"
+                  required
+                  data-original-value="{{device.allowedPackage}}"
+                />
+                <button type="submit" class="check-btn" disabled title="Apply package change">
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M16.667 5L7.5 14.167 3.333 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </button>
+              </div>
             </div>
-            <button type="submit">Queue Package Update</button>
           </form>
 
-          <form method="post" action="/dashboard/devices/{{device.id}}/commands/reboot">
-            <label>&nbsp;</label>
+          <form method="post" action="/dashboard/devices/{{device.id}}/commands/reboot" class="action-form">
             <button type="submit" class="danger">Send Reboot</button>
           </form>
         </div>
@@ -84,23 +96,28 @@
 
         {{#if (eq user.role 'ADMIN')}}
         <div class="actions">
-          <form method="post" action="/dashboard/devices/{{device.id}}/token">
-            <label>&nbsp;</label>
+          <form method="post" action="/dashboard/devices/{{device.id}}/token" class="action-form">
             <button type="submit" class="secondary">Rotate Device Token</button>
           </form>
 
-          <form method="post" action="/dashboard/devices/{{device.id}}/expected-serial">
-            <div class="form-group">
-              <label for="expectedDeviceSerial">Expected Device Serial/Android ID</label>
-              <input
-                type="text"
-                id="expectedDeviceSerial"
-                name="expectedDeviceSerial"
-                value="{{device.expectedDeviceSerial}}"
-                placeholder="Leave empty to allow any device"
-              />
+          <form method="post" action="/dashboard/devices/{{device.id}}/expected-serial" class="action-form">
+            <div class="form-group-inline">
+              <div class="input-with-check">
+                <input
+                  type="text"
+                  id="expectedDeviceSerial"
+                  name="expectedDeviceSerial"
+                  value="{{device.expectedDeviceSerial}}"
+                  placeholder="Expected Device Serial/Android ID"
+                  data-original-value="{{device.expectedDeviceSerial}}"
+                />
+                <button type="submit" class="check-btn" disabled title="Apply serial change">
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M16.667 5L7.5 14.167 3.333 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </button>
+              </div>
             </div>
-            <button type="submit" class="secondary">Update Expected Serial</button>
           </form>
         </div>
         {{/if}}
@@ -192,4 +209,63 @@
     </div>
   </div>
 {{> footer}}
+
+<script>
+  // Track input changes and enable/disable check buttons
+  document.addEventListener('DOMContentLoaded', function() {
+    const inputs = document.querySelectorAll('input[data-original-value]');
+    
+    inputs.forEach(input => {
+      const originalValueAttr = input.getAttribute('data-original-value');
+      const originalValue = originalValueAttr !== null ? originalValueAttr : '';
+      const form = input.closest('form');
+      const checkBtn = form?.querySelector('.check-btn');
+      
+      if (!checkBtn) return;
+      
+      // Check initial state
+      function checkInputChange() {
+        const currentValue = input.value.trim();
+        // For PIN input (empty original), enable if value is valid (4+ digits)
+        // For other inputs, enable if value changed and is not empty (or if original was empty and now has value)
+        let hasChanged = false;
+        
+        if (originalValue === '') {
+          // PIN input or empty original - enable if has valid value
+          if (input.type === 'number') {
+            hasChanged = currentValue.length >= 4;
+          } else {
+            hasChanged = currentValue !== '';
+          }
+        } else {
+          // Has original value - enable if changed
+          hasChanged = currentValue !== originalValue;
+        }
+        
+        if (hasChanged) {
+          checkBtn.disabled = false;
+          checkBtn.classList.add('active');
+        } else {
+          checkBtn.disabled = true;
+          checkBtn.classList.remove('active');
+        }
+      }
+      
+      // Check on input
+      input.addEventListener('input', checkInputChange);
+      
+      // Check on page load
+      checkInputChange();
+      
+      // Reset after form submission (if page doesn't reload)
+      form.addEventListener('submit', function() {
+        setTimeout(() => {
+          const newValue = input.value.trim();
+          input.setAttribute('data-original-value', newValue);
+          checkInputChange();
+        }, 100);
+      });
+    });
+  });
+</script>
 

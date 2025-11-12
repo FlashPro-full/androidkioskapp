@@ -4,7 +4,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 import { Device, DeviceStatus } from './entities/device.entity';
 import { DeviceToken } from './entities/device-token.entity';
 import { Heartbeat } from './entities/heartbeat.entity';
@@ -25,6 +25,7 @@ export class DevicesService {
     @InjectRepository(Heartbeat)
     private readonly heartbeatsRepository: Repository<Heartbeat>,
     private readonly configService: ConfigService,
+    private readonly dataSource: DataSource,
   ) {}
 
   findAll(): Promise<Device[]> {
@@ -167,8 +168,36 @@ export class DevicesService {
 
   async rotateDeviceToken(deviceId: string): Promise<{ token: string }> {
     const device = await this.getDeviceOrThrow(deviceId);
-    if (device.latestToken) {
-      await this.tokensRepository.remove(device.latestToken);
+    
+    // Load the token relationship if it exists
+    const existingToken = await this.tokensRepository.findOne({
+      where: { device: { id: deviceId } },
+    });
+    
+    if (existingToken) {
+      // Get the foreign key column name from TypeORM metadata
+      const deviceMetadata = this.dataSource.getMetadata(Device);
+      const latestTokenRelation = deviceMetadata.findRelationWithPropertyPath('latestToken');
+      const foreignKeyColumn = latestTokenRelation?.joinColumns?.[0]?.databaseName;
+      
+      if (foreignKeyColumn) {
+        // Use raw SQL to nullify the foreign key column
+        await this.dataSource.query(
+          `UPDATE devices SET ${foreignKeyColumn} = NULL WHERE id = $1`,
+          [deviceId]
+        );
+      } else {
+        // Fallback: try to clear the relationship using TypeORM
+        await this.devicesRepository
+          .createQueryBuilder()
+          .update(Device)
+          .set({ latestToken: null as any })
+          .where('id = :deviceId', { deviceId })
+          .execute();
+      }
+      
+      // Now we can safely delete the token
+      await this.tokensRepository.remove(existingToken);
     }
 
     const { plainToken, tokenHash } = this.generateDeviceToken();
@@ -177,6 +206,8 @@ export class DevicesService {
       tokenHash,
     });
     await this.tokensRepository.save(token);
+    
+    // Update device to reference the new token
     device.latestToken = token;
     await this.devicesRepository.save(device);
     return { token: plainToken };

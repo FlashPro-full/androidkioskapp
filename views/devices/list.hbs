@@ -1,10 +1,11 @@
 {{> head title=title}}
+
 <body>
   {{> nav}}
   <div class="page">
     <div class="container">
       {{#if status}}
-        <div class="status-message">{{status}}</div>
+      <div class="status-message">{{status}}</div>
       {{/if}}
       <form method="post" action="/dashboard/devices/bulk/commands" class="bulk-form">
         <div class="card card--full">
@@ -12,77 +13,104 @@
             <h2>Registered Devices</h2>
             <div class="card-actions">
               {{#if user}}
-                {{#if (eq user.role 'ADMIN')}}
-                <a class="btn-link" href="/dashboard/devices/new">+ Register Device</a>
-                {{/if}}
+              {{#if (eq user.role 'ADMIN')}}
+              <a class="btn-link" href="/dashboard/devices/new">+ Register Device</a>
+              {{/if}}
               {{/if}}
             </div>
           </div>
           {{#if devices}}
-            {{#if devices.length}}
-            <table>
-              <thead>
-                <tr>
-                  <th>
-                    <input type="checkbox" id="selectAll" />
-                  </th>
-                  <th>Name</th>
-                  <th>Allowed Package</th>
-                  <th>Status</th>
-                  <th>Last Check-In</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {{#each devices}}
-                  <tr>
-                    <td>
-                      <input type="checkbox" name="deviceIds" value="{{this.id}}" />
-                    </td>
-                    <td>{{this.displayName}}</td>
-                    <td>{{this.allowedPackage}}</td>
-                    <td>
-                      <span class="status-badge status-{{statusClass this.status}}">
-                        {{statusLabel this.status}}
-                      </span>
-                    </td>
-                    <td>{{formatDate this.lastCheckIn}}</td>
-                    <td><a href="/dashboard/devices/{{this.id}}">View</a></td>
-                  </tr>
-                {{/each}}
-              </tbody>
-            </table>
-            {{#if user}}
-              {{#if (or (eq user.role 'ADMIN') (eq user.role 'TECHNICIAN'))}}
-              <div class="bulk-actions">
-              <div class="bulk-actions__group">
-                <label>Bulk action</label>
-                <select name="action" required>
-                  <option value="">Select action</option>
-                  <option value="pin">Rotate PIN</option>
-                  <option value="package">Change package</option>
-                  <option value="reboot">Remote reboot</option>
-                </select>
-              </div>
-              <div class="bulk-actions__group">
-                <input type="text" name="pin" placeholder="New PIN">
-              </div>
-              <div class="bulk-actions__group">
-                <input type="text" name="allowedPackage" placeholder="New package">
-              </div>
+          {{#if devices.length}}
+          <table>
+            <thead>
+              <tr>
+                <th>
+                  <input type="checkbox" id="selectAll" />
+                </th>
+                <th>Name</th>
+                <th>Allowed Package</th>
+                <th>Status</th>
+                <th>Last Check-In</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {{#each devices}}
+              <tr>
+                <td>
+                  <input type="checkbox" name="deviceIds" value="{{this.id}}" />
+                </td>
+                <td>{{this.displayName}}</td>
+                <td>{{this.allowedPackage}}</td>
+                <td>
+                  <span class="status-badge status-{{statusClass this.status}}">
+                    {{statusLabel this.status}}
+                  </span>
+                </td>
+                <td>{{formatDate this.lastCheckIn}}</td>
+                <td><a href="/dashboard/devices/{{this.id}}">View</a></td>
+              </tr>
+              {{/each}}
+            </tbody>
+          </table>
+          {{#if user}}
+          {{#if (or (eq user.role 'ADMIN') (eq user.role 'TECHNICIAN'))}}
+          <div class="bulk-actions">
+            <div class="bulk-actions__group">
+              <label>Bulk action</label>
+              <select name="action" id="bulk-action-select" required>
+                <option value="">Select action</option>
+                <option value="pin">Rotate PIN</option>
+                <option value="package">Change package</option>
+                <option value="reboot">Remote reboot</option>
+              </select>
+            </div>
+            <div class="bulk-actions__group" id="pin-input-group" style="display: none;">
+              <label>New PIN</label>
+              <input type="text" name="pin" placeholder="New PIN">
+            </div>
+            <div class="bulk-actions__group" id="package-input-group" style="display: none;">
+              <label>New package</label>
+              <input type="text" name="allowedPackage" placeholder="New package">
+            </div>
+            <div class="bulk-actions__button">
               <button type="submit" class="btn-primary">Queue command</button>
-              </div>
-              {{/if}}
-            {{/if}}
-            {{else}}
-              <p>No devices registered yet.</p>
-            {{/if}}
+            </div>
+          </div>
+          {{/if}}
+          {{/if}}
           {{else}}
-            <p>No devices registered yet.</p>
+          <p>No devices registered yet.</p>
+          {{/if}}
+          {{else}}
+          <p>No devices registered yet.</p>
           {{/if}}
         </div>
       </form>
     </div>
   </div>
-{{> footer}}
+  {{> footer}}
+  <script>
+    // Show/hide inputs based on selected bulk action
+    const actionSelect = document.getElementById('bulk-action-select');
+    const pinInputGroup = document.getElementById('pin-input-group');
+    const packageInputGroup = document.getElementById('package-input-group');
 
+    if (actionSelect) {
+      actionSelect.addEventListener('change', function () {
+        const action = this.value;
+
+        // Hide all input groups first
+        if (pinInputGroup) pinInputGroup.style.display = 'none';
+        if (packageInputGroup) packageInputGroup.style.display = 'none';
+
+        // Show relevant input group based on action
+        if (action === 'pin' && pinInputGroup) {
+          pinInputGroup.style.display = 'flex';
+        } else if (action === 'package' && packageInputGroup) {
+          packageInputGroup.style.display = 'flex';
+        }
+        // For 'reboot', no inputs needed, so both stay hidden
+      });
+    }
+  </script>

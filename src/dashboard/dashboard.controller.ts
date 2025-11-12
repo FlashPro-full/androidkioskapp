@@ -52,26 +52,9 @@ export class DashboardController {
   @UseGuards(DashboardAuthGuard)
   @Get('/dashboard/download/apk')
   async downloadApk(@Res() res: Response) {
-    // Try multiple possible APK locations
-    const possiblePaths = [
-      // Relative to portal directory
-      join(process.cwd(), '..', 'app', 'build', 'outputs', 'apk', 'release', 'app-release.apk'),
-      join(process.cwd(), '..', 'app', 'build', 'outputs', 'apk', 'debug', 'app-debug.apk'),
-      // In public directory
-      join(process.cwd(), 'public', 'kiosk.apk'),
-      join(process.cwd(), 'public', 'app-release.apk'),
-      // Environment variable path
-      process.env.APK_PATH,
-    ].filter(Boolean) as string[];
 
-    let apkPath: string | null = null;
-    for (const path of possiblePaths) {
-      if (path && existsSync(path)) {
-        apkPath = path;
-        break;
-      }
-    }
-
+    let apkPath: string | null = process.env.APK_PATH ?? null;
+    
     if (!apkPath) {
       return res.status(404).send('APK file not found. Please ensure the APK is built and placed in the public directory or set APK_PATH environment variable.');
     }

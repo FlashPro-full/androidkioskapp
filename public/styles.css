@@ -75,6 +75,10 @@ a:hover {
   max-width: 560px;
 }
 
+.container--device-detail {
+  max-width: 800px;
+}
+
 .card {
   background: #fff;
   border-radius: 12px;
@@ -150,8 +154,108 @@ th {
 
 .actions {
   display: flex;
+  flex-direction: column;
   gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.action-form {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.75rem;
   flex-wrap: wrap;
+  width: 100%;
+}
+
+.form-group-inline {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  width: 100%;
+  flex: 1 1 100%;
+}
+
+.form-group-inline label {
+  font-weight: 600;
+  color: #475569;
+  font-size: 0.9rem;
+}
+
+.form-group-inline input {
+  width: 100%;
+}
+
+.input-with-check {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.input-with-check input {
+  padding-right: 2.5rem;
+  width: 100%;
+}
+
+.check-btn {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 31px;
+  padding: 0;
+  border: none;
+  border-radius: 0 6px 6px 0;
+  background: #e5e7eb;
+  color: #9ca3af;
+  cursor: not-allowed;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.check-btn:hover:not(:disabled) {
+  background: #2563eb;
+  color: #fff;
+  transform: scale(1.05);
+}
+
+.check-btn:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.check-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.check-btn.active:not(:disabled) {
+  background: #10b981;
+  color: #fff;
+  cursor: pointer;
+}
+
+.check-btn.secondary.active:not(:disabled) {
+  background: #6366f1;
+  color: #fff;
+}
+
+.check-btn svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 2.5;
+}
+
+.action-form button:not(.check-btn) {
+  width: 100%;
+  align-self: stretch;
+}
+
+.actions form {
+  display: block;
+  width: 100%;
 }
 
 form {
@@ -273,6 +377,7 @@ button.danger {
   align-items: center;
   gap: 1rem;
   margin-top: 1.5rem;
+  padding-top: 1rem;
   flex-wrap: wrap;
 }
 
@@ -283,11 +388,28 @@ button.danger {
   min-width: 200px;
 }
 
+.bulk-actions__group label {
+  font-weight: 600;
+  color: #475569;
+  font-size: 0.9rem;
+}
+
 .bulk-actions__group input,
 .bulk-actions__group select {
   padding: 0.5rem 0.75rem;
   border-radius: 6px;
   border: 1px solid #cbd5e1;
+}
+
+.bulk-actions__button {
+  margin-left: auto;
+  align-self: flex-end;
+  display: flex;
+  align-items: flex-end;
+}
+
+.bulk-actions__button button {
+  white-space: nowrap;
 }
 
 .qr-block {
@@ -648,7 +770,138 @@ button.danger {
   white-space: nowrap;
 }
 
+/* Mobile-first responsive styles */
 @media (max-width: 768px) {
+  .container {
+    padding: 0 1rem;
+  }
+
+  .page {
+    padding: 1rem 0 2rem;
+  }
+
+  .card {
+    padding: 1rem;
+  }
+
+  .topbar__inner {
+    flex-wrap: wrap;
+    height: auto;
+    min-height: 56px;
+    padding: 0.5rem 0;
+  }
+
+  .nav {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .card-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  table {
+    font-size: 0.875rem;
+  }
+
+  th,
+  td {
+    padding: 0.5rem;
+  }
+
+  .actions {
+    gap: 0.75rem;
+  }
+
+  .action-form {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+  }
+
+  .form-group-inline {
+    width: 100%;
+    flex: 1 1 100%;
+  }
+
+  .input-with-check {
+    width: 100%;
+  }
+
+  .action-form button:not(.check-btn) {
+    width: 100%;
+    align-self: stretch;
+  }
+
+  .bulk-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .bulk-actions__group {
+    min-width: 100%;
+  }
+
+  .bulk-actions__button {
+    width: 100%;
+    margin-left: 0;
+    align-self: stretch;
+  }
+
+  .qr-block {
+    flex-direction: column;
+  }
+
+  .qr-block__image,
+  .qr-block__json {
+    width: 100%;
+    height: auto;
+    min-height: 240px;
+  }
+
+  .device-summary__row {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .device-summary__value {
+    text-align: left;
+  }
+
+  .kv-list__item {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .kv-list__value {
+    text-align: left;
+    word-break: break-word;
+  }
+
+  .users-table {
+    min-width: 600px;
+  }
+
+  .user-actions {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .user-action-form {
+    width: 100%;
+  }
+
+  .role-select {
+    width: 100%;
+  }
+
   .download-apk-btn {
     bottom: 1rem;
     left: 1rem;
@@ -662,6 +915,20 @@ button.danger {
   
   .download-apk-btn span {
     display: none;
+  }
+
+  .file-input-wrapper {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .file-input-label {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .file-name {
+    text-align: center;
   }
 }
 
