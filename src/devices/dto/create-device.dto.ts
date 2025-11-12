@@ -13,6 +13,10 @@ export class CreateDeviceDto {
   @IsOptional()
   @MinLength(4)
   initialPin?: string;
+
+  @IsString()
+  @IsOptional()
+  expectedDeviceSerial?: string;
 }
 
 

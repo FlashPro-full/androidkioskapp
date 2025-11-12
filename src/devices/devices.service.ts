@@ -44,6 +44,7 @@ export class DevicesService {
       pinSalt: salt,
       pinHash,
       initialPinPlaintext: initialPin, // Store plaintext for QR regeneration
+      expectedDeviceSerial: dto.expectedDeviceSerial,
       status: DeviceStatus.PROVISIONED,
     });
     await this.devicesRepository.save(device);
@@ -83,6 +84,9 @@ export class DevicesService {
     }
     if (dto.allowedPackage) {
       device.allowedPackage = dto.allowedPackage;
+    }
+    if (dto.expectedDeviceSerial !== undefined) {
+      device.expectedDeviceSerial = dto.expectedDeviceSerial;
     }
     await this.devicesRepository.save(device);
     return device;
@@ -126,6 +130,15 @@ export class DevicesService {
     device: Device,
     heartbeatDto: HeartbeatDto,
   ): Promise<Heartbeat> {
+    // Validate device serial if expected serial is set
+    if (device.expectedDeviceSerial && heartbeatDto.deviceSerial) {
+      if (device.expectedDeviceSerial !== heartbeatDto.deviceSerial) {
+        throw new UnauthorizedException(
+          `Device serial mismatch. Expected: ${device.expectedDeviceSerial}, Got: ${heartbeatDto.deviceSerial}`,
+        );
+      }
+    }
+
     device.lastCheckIn = new Date();
     device.status = DeviceStatus.ONLINE;
     await this.devicesRepository.save(device);

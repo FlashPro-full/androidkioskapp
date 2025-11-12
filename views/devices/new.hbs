@@ -39,6 +39,16 @@
               placeholder="Optional (default 1234)"
             />
           </div>
+          <div class="form-group">
+            <label for="expectedDeviceSerial">Expected Device Serial/Android ID</label>
+            <input
+              type="text"
+              id="expectedDeviceSerial"
+              name="expectedDeviceSerial"
+              placeholder="Optional - restricts QR code to specific device"
+            />
+            <small>If provided, only a device with this serial/Android ID can use this QR code</small>
+          </div>
           <button type="submit" class="btn-primary">Create device</button>
         </form>
         <p class="login-helper">

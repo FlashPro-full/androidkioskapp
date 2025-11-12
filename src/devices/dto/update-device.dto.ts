@@ -9,6 +9,10 @@ export class UpdateDeviceDto {
   @IsString()
   @IsOptional()
   allowedPackage?: string;
+
+  @IsString()
+  @IsOptional()
+  expectedDeviceSerial?: string;
 }
 
 

@@ -15,11 +15,15 @@ import { AuthService } from '../auth/auth.service';
 import { DevicesService } from '../devices/devices.service';
 import { CommandsService } from '../commands/commands.service';
 import { DashboardAuthGuard } from './dashboard-auth.guard';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
+import { UserRole } from '../users/entities/user.entity';
 import { CommandType } from '../commands/entities/command.entity';
 import { JwtService } from '@nestjs/jwt';
 import { DashboardUnauthorizedFilter } from './dashboard-unauthorized.filter';
 import { CreateDeviceDto } from '../devices/dto/create-device.dto';
 import { generateProvisioningQr } from './provisioning-qr';
+import { UsersService } from '../users/users.service';
 
 const SESSION_COOKIE = 'session_token';
 
@@ -33,11 +37,68 @@ export class DashboardController {
     private readonly devicesService: DevicesService,
     private readonly commandsService: CommandsService,
     private readonly jwtService: JwtService,
+    private readonly usersService: UsersService,
   ) {}
 
   @Get('/')
   async root(@Res() res: Response) {
     return res.redirect('/dashboard/devices');
+  }
+
+  @Get('/dashboard/register')
+  async showRegister(
+    @Query('status') status: string | undefined,
+    @Res() res: Response,
+  ) {
+    return res.render('auth/register', {
+      title: 'Register',
+      status,
+    });
+  }
+
+  @Post('/dashboard/register')
+  async handleRegister(
+    @Body('username') username: string,
+    @Body('password') password: string,
+    @Res() res: Response,
+  ) {
+    const trimmedUsername = username?.trim();
+    if (!trimmedUsername || trimmedUsername.length < 3) {
+      return res.render('auth/register', {
+        title: 'Register',
+        error: 'Username must be at least 3 characters',
+        username: trimmedUsername,
+      });
+    }
+
+    if (!password || password.length < 8) {
+      return res.render('auth/register', {
+        title: 'Register',
+        error: 'Password must be at least 8 characters',
+        username: trimmedUsername,
+      });
+    }
+
+    try {
+      await this.usersService.create(
+        trimmedUsername,
+        password,
+        undefined, // Default to VIEWER
+        undefined, // Default to PENDING
+      );
+      return res.redirect(
+        '/dashboard/login?message=' +
+          encodeURIComponent(
+            'Registration successful! Your account is pending approval. Please contact an administrator.',
+          ),
+      );
+    } catch (error: any) {
+      return res.render('auth/register', {
+        title: 'Register',
+        error: error.message || 'Registration failed',
+        username: trimmedUsername,
+      });
+    }
   }
 
   @Get('/dashboard/login')
@@ -83,10 +144,11 @@ export class DashboardController {
       const redirectTarget =
         next && next.startsWith('/') ? next : '/dashboard/devices';
       return res.redirect(redirectTarget);
-    } catch (error) {
+    } catch (error: any) {
+      const errorMessage = error.message || 'Invalid credentials';
       return res.render('auth/login', {
         title: 'Login',
-        error: 'Invalid credentials',
+        error: errorMessage,
         username,
         next: next && next.startsWith('/') ? next : '/dashboard/devices',
       });
@@ -104,6 +166,7 @@ export class DashboardController {
   async listDevices(
     @Query('status') status: string | undefined,
     @Query('message') message: string | undefined,
+    @Req() req: Request,
     @Res() res: Response,
   ) {
     const devices = await this.devicesService.findAll();
@@ -112,10 +175,12 @@ export class DashboardController {
       devices,
       status,
       message,
+      user: (req as any).user,
     });
   }
 
-  @UseGuards(DashboardAuthGuard)
+  @UseGuards(DashboardAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.TECHNICIAN)
   @Post('/dashboard/devices/bulk/commands')
   async queueBulkCommand(
     @Body('deviceIds') deviceIds: string[],
@@ -189,15 +254,18 @@ export class DashboardController {
     }
   }
 
-  @UseGuards(DashboardAuthGuard)
+  @UseGuards(DashboardAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
   @Get('/dashboard/devices/new')
   async showCreateDevice(
     @Query('status') status: string | undefined,
+    @Req() req: Request,
     @Res() res: Response,
   ) {
     return res.render('devices/new', {
       title: 'Register Device',
       status,
+      user: (req as any).user,
       defaults: {
         allowedPackage:
           process.env.DEFAULT_ALLOWED_PACKAGE ?? 'com.client.businessapp',
@@ -205,12 +273,14 @@ export class DashboardController {
     });
   }
 
-  @UseGuards(DashboardAuthGuard)
+  @UseGuards(DashboardAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
   @Post('/dashboard/devices/new')
   async createDevice(
     @Body('displayName') displayName: string,
     @Body('allowedPackage') allowedPackage: string | undefined,
     @Body('initialPin') initialPin: string | undefined,
+    @Body('expectedDeviceSerial') expectedDeviceSerial: string | undefined,
     @Res() res: Response,
   ) {
     const trimmedName = displayName?.trim();
@@ -228,6 +298,7 @@ export class DashboardController {
         process.env.DEFAULT_ALLOWED_PACKAGE ||
         'com.client.businessapp',
       initialPin: initialPin?.trim(),
+      expectedDeviceSerial: expectedDeviceSerial?.trim() || undefined,
     };
 
     try {
@@ -253,6 +324,7 @@ export class DashboardController {
     @Query('status') status: string | undefined,
     @Query('token') token: string | undefined,
     @Query('showQr') showQr: string | undefined,
+    @Req() req: Request,
     @Res() res: Response,
   ) {
     const device = await this.devicesService.getDeviceOrThrow(id);
@@ -264,6 +336,7 @@ export class DashboardController {
       device_token: token ?? 'Rotate token to view a fresh value.',
       allowed_package: device.allowedPackage,
       initial_pin: device.initialPinPlaintext ?? '1234', // Use stored PIN or default
+      expected_device_serial: device.expectedDeviceSerial,
     };
 
     return res.render('devices/detail', {
@@ -274,6 +347,7 @@ export class DashboardController {
       status,
       token,
       provisioning,
+      user: (req as any).user,
       qr:
         showQr !== undefined
           ? await generateProvisioningQr(provisioning)
@@ -281,7 +355,8 @@ export class DashboardController {
     });
   }
 
-  @UseGuards(DashboardAuthGuard)
+  @UseGuards(DashboardAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.TECHNICIAN)
   @Post('/dashboard/devices/:id/commands/pin')
   async queuePinUpdate(
     @Param('id') id: string,
@@ -307,7 +382,8 @@ export class DashboardController {
     );
   }
 
-  @UseGuards(DashboardAuthGuard)
+  @UseGuards(DashboardAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.TECHNICIAN)
   @Post('/dashboard/devices/:id/commands/package')
   async queuePackageUpdate(
     @Param('id') id: string,
@@ -332,7 +408,8 @@ export class DashboardController {
     );
   }
 
-  @UseGuards(DashboardAuthGuard)
+  @UseGuards(DashboardAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.TECHNICIAN)
   @Post('/dashboard/devices/:id/commands/reboot')
   async queueReboot(@Param('id') id: string, @Res() res: Response) {
     await this.commandsService.queueCommand(id, CommandType.REBOOT);
@@ -343,7 +420,8 @@ export class DashboardController {
     );
   }
 
-  @UseGuards(DashboardAuthGuard)
+  @UseGuards(DashboardAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
   @Post('/dashboard/devices/:id/token')
   async rotateToken(
     @Param('id') id: string,
@@ -355,6 +433,157 @@ export class DashboardController {
     return res.redirect(
       `/dashboard/devices/${id}?status=${message}&token=${token}`,
     );
+  }
+
+  @UseGuards(DashboardAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Post('/dashboard/devices/:id/expected-serial')
+  async updateExpectedSerial(
+    @Param('id') id: string,
+    @Body('expectedDeviceSerial') expectedDeviceSerial: string | undefined,
+    @Res() res: Response,
+  ) {
+    await this.devicesService.updateDevice(id, {
+      expectedDeviceSerial: expectedDeviceSerial?.trim() || undefined,
+    });
+    return res.redirect(
+      `/dashboard/devices/${id}?status=${encodeURIComponent(
+        'Expected device serial updated',
+      )}`,
+    );
+  }
+
+  @UseGuards(DashboardAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Get('/dashboard/users')
+  async listUsers(
+    @Query('status') status: string | undefined,
+    @Query('message') message: string | undefined,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    const users = await this.usersService.findAll();
+    // Separate pending and active users for the view
+    const pendingUsers = users.filter((u) => u.status === 'PENDING');
+    const activeUsers = users.filter((u) => u.status === 'ACTIVE');
+    return res.render('users/list', {
+      title: 'Users',
+      users,
+      pendingUsers,
+      activeUsers,
+      status,
+      message,
+      user: (req as any).user,
+    });
+  }
+
+  @UseGuards(DashboardAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Get('/dashboard/users/new')
+  async showCreateUser(
+    @Query('status') status: string | undefined,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    return res.render('users/new', {
+      title: 'Create User',
+      status,
+      user: (req as any).user,
+    });
+  }
+
+  @UseGuards(DashboardAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Post('/dashboard/users/new')
+  async createUser(
+    @Body('username') username: string,
+    @Body('password') password: string,
+    @Body('role') role: string,
+    @Res() res: Response,
+  ) {
+    const trimmedUsername = username?.trim();
+    if (!trimmedUsername || trimmedUsername.length < 3) {
+      return res.redirect(
+        '/dashboard/users/new?status=' +
+          encodeURIComponent('Username must be at least 3 characters'),
+      );
+    }
+
+    if (!password || password.length < 8) {
+      return res.redirect(
+        '/dashboard/users/new?status=' +
+          encodeURIComponent('Password must be at least 8 characters'),
+      );
+    }
+
+    if (!role || !Object.values(UserRole).includes(role as UserRole)) {
+      return res.redirect(
+        '/dashboard/users/new?status=' +
+          encodeURIComponent('Invalid role selected'),
+      );
+    }
+
+    try {
+      await this.usersService.create(
+        trimmedUsername,
+        password,
+        role as UserRole,
+      );
+      return res.redirect(
+        '/dashboard/users?status=' + encodeURIComponent('User created'),
+      );
+    } catch (error: any) {
+      return res.redirect(
+        '/dashboard/users/new?status=' +
+          encodeURIComponent(error.message || 'Failed to create user'),
+      );
+    }
+  }
+
+  @UseGuards(DashboardAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Post('/dashboard/users/:id/delete')
+  async deleteUser(@Param('id') id: string, @Res() res: Response) {
+    try {
+      await this.usersService.delete(id);
+      return res.redirect(
+        '/dashboard/users?status=' + encodeURIComponent('User deleted'),
+      );
+    } catch (error: any) {
+      return res.redirect(
+        '/dashboard/users?status=' +
+          encodeURIComponent(error.message || 'Failed to delete user'),
+      );
+    }
+  }
+
+  @UseGuards(DashboardAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Post('/dashboard/users/:id/update')
+  async updateUser(
+    @Param('id') id: string,
+    @Body('role') role: string | undefined,
+    @Body('password') password: string | undefined,
+    @Res() res: Response,
+  ) {
+    try {
+      const updates: { role?: UserRole; password?: string } = {};
+      if (role && Object.values(UserRole).includes(role as UserRole)) {
+        updates.role = role as UserRole;
+      }
+      if (password && password.length >= 8) {
+        updates.password = password;
+      }
+      await this.usersService.update(id, updates);
+      return res.redirect(
+        '/dashboard/users?status=' + encodeURIComponent('User updated'),
+      );
+    } catch (error: any) {
+      return res.redirect(
+        '/dashboard/users?status=' +
+          encodeURIComponent(error.message || 'Failed to update user'),
+      );
+    }
   }
 
   private async hasValidSession(req: Request): Promise<boolean> {

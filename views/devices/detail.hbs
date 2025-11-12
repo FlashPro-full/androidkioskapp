@@ -48,6 +48,7 @@
           {{/if}}
         </p>
 
+        {{#if (or (eq user.role 'ADMIN') (eq user.role 'TECHNICIAN'))}}
         <div class="actions">
           <form method="post" action="/dashboard/devices/{{device.id}}/commands/pin">
             <div class="form-group">
@@ -78,12 +79,31 @@
             <label>&nbsp;</label>
             <button type="submit" class="danger">Send Reboot</button>
           </form>
+        </div>
+        {{/if}}
 
+        {{#if (eq user.role 'ADMIN')}}
+        <div class="actions">
           <form method="post" action="/dashboard/devices/{{device.id}}/token">
             <label>&nbsp;</label>
             <button type="submit" class="secondary">Rotate Device Token</button>
           </form>
+
+          <form method="post" action="/dashboard/devices/{{device.id}}/expected-serial">
+            <div class="form-group">
+              <label for="expectedDeviceSerial">Expected Device Serial/Android ID</label>
+              <input
+                type="text"
+                id="expectedDeviceSerial"
+                name="expectedDeviceSerial"
+                value="{{device.expectedDeviceSerial}}"
+                placeholder="Leave empty to allow any device"
+              />
+            </div>
+            <button type="submit" class="secondary">Update Expected Serial</button>
+          </form>
         </div>
+        {{/if}}
       </div>
 
       <div class="card">
@@ -118,6 +138,12 @@
             <span class="kv-list__label">Initial PIN</span>
             <span class="kv-list__value">{{provisioning.initial_pin}}</span>
           </li>
+          {{#if provisioning.expected_device_serial}}
+          <li class="kv-list__item">
+            <span class="kv-list__label">Expected Device Serial</span>
+            <span class="kv-list__value"><code>{{provisioning.expected_device_serial}}</code></span>
+          </li>
+          {{/if}}
         </ul>
         {{#if qr}}
           <div class="qr-block">

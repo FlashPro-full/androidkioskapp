@@ -47,6 +47,9 @@ export class Device {
   @Column({ name: 'last_command_at', type: 'timestamp', nullable: true })
   lastCommandAt?: Date;
 
+  @Column({ name: 'expected_device_serial', nullable: true })
+  expectedDeviceSerial?: string;
+
   @OneToMany(() => Command, (command) => command.device)
   commands: Command[];
 

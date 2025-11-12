@@ -25,12 +25,21 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    // Check if user is approved/active
+    if (user.status !== 'ACTIVE') {
+      throw new UnauthorizedException('Your account is pending approval. Please contact an administrator.');
+    }
+
     return user;
   }
 
   async login(username: string, password: string) {
     const user = await this.validateUser(username, password);
-    const payload = { sub: user.id, username: user.username };
+    const payload = { 
+      sub: user.id, 
+      username: user.username,
+      role: user.role 
+    };
     const accessToken = await this.jwtService.signAsync(payload);
     return { accessToken };
   }

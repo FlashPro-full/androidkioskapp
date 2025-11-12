@@ -8,6 +8,13 @@ import {
 
 export enum UserRole {
   ADMIN = 'ADMIN',
+  TECHNICIAN = 'TECHNICIAN',
+  VIEWER = 'VIEWER',
+}
+
+export enum UserStatus {
+  PENDING = 'PENDING',
+  ACTIVE = 'ACTIVE',
 }
 
 @Entity({ name: 'users' })
@@ -21,8 +28,11 @@ export class User {
   @Column({ name: 'password_hash' })
   passwordHash: string;
 
-  @Column({ type: 'enum', enum: UserRole, default: UserRole.ADMIN })
+  @Column({ type: 'enum', enum: UserRole, default: UserRole.VIEWER })
   role: UserRole;
+
+  @Column({ type: 'enum', enum: UserStatus, default: UserStatus.PENDING })
+  status: UserStatus;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

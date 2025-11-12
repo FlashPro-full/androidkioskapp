@@ -6,6 +6,7 @@ export interface ProvisioningExtras {
   device_token: string;
   allowed_package: string;
   initial_pin: string;
+  expected_device_serial?: string;
 }
 
 export function buildProvisioningPayload(extras: ProvisioningExtras) {
@@ -19,6 +20,7 @@ export function buildProvisioningPayload(extras: ProvisioningExtras) {
       device_token: extras.device_token,
       allowed_package: extras.allowed_package,
       initial_pin: extras.initial_pin,
+      expected_device_serial: extras.expected_device_serial,
     },
   };
 }

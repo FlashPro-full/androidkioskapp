@@ -1,0 +1,51 @@
+{{> head title=title}}
+<body>
+  <div class="page page--center">
+    <div class="container narrow">
+      <div class="card">
+        <h2>Register</h2>
+        {{#if status}}
+          <div class="status-message">{{status}}</div>
+        {{/if}}
+        {{#if error}}
+          <div class="status-message" style="background-color: #fee; color: #c33;">
+            {{error}}
+          </div>
+        {{/if}}
+        <form method="post" action="/dashboard/register" class="vertical-form">
+          <div class="form-group">
+            <label for="username">Username</label>
+            <input
+              type="text"
+              id="username"
+              name="username"
+              placeholder="Choose a username"
+              value="{{username}}"
+              required
+              minlength="3"
+              autofocus
+            />
+          </div>
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              placeholder="Minimum 8 characters"
+              required
+              minlength="8"
+            />
+          </div>
+          <button type="submit" class="btn-primary">Register</button>
+        </form>
+        <p class="login-helper">
+          Already have an account? <a href="/dashboard/login">Sign in</a>
+          <br />
+          <small>After registration, your account will be pending approval by an administrator.</small>
+        </p>
+      </div>
+    </div>
+  </div>
+{{> footer}}
+
